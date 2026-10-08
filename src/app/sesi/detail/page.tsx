@@ -3,7 +3,8 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Meeting, INITIAL_MEETINGS } from "@/lib/sessionData";
-import { SesiFooter, SesiToast } from "@/components/sesi";
+import { AppFooter } from "@/components/common";
+import { SesiToast } from "@/components/sesi";
 import {
   SesiDetailHero,
   SesiHeaderCard,
@@ -178,7 +179,7 @@ export default function SesiDetailPage() {
       <SesiToast message={toastMessage} />
 
       {/* 5. FOOTER */}
-      <SesiFooter onShowToast={showToast} />
+      <AppFooter onShowToast={showToast} />
     </div>
   );
 }

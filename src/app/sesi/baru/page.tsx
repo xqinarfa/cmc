@@ -3,8 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import AppNavbar from "@/components/AppNavbar";
-import { SesiFooter } from "@/components/sesi";
+import { AppNavbar, AppFooter } from "@/components/common";
 import {
   SesiBaruHero,
   SesiBaruStepper,
@@ -208,7 +207,7 @@ export default function CatatSesiBaruPage() {
       />
 
       {/* Footer */}
-      <SesiFooter onShowToast={() => {}} />
+      <AppFooter onShowToast={() => {}} />
     </div>
   );
 }

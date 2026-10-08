@@ -3,8 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import AppNavbar from "@/components/AppNavbar";
-import { SesiFooter } from "@/components/sesi";
+import { AppNavbar, AppFooter } from "@/components/common";
 import {
   CatatPertemuanHero,
   CatatPertemuanStepper,
@@ -197,7 +196,7 @@ export default function CatatPertemuanPage() {
       />
 
       {/* Footer */}
-      <SesiFooter onShowToast={() => {}} />
+      <AppFooter onShowToast={() => {}} />
     </div>
   );
 }

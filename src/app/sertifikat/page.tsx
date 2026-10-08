@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useMemo } from "react";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
-import AppNavbar from "@/components/AppNavbar";
+import { AppNavbar } from "@/components/common";
 import {
   CERTIFICATES_DATA,
   CertificateItem,

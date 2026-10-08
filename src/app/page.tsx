@@ -1,10 +1,11 @@
-import Navbar from "@/components/Navbar";
-import HeroSection from "@/components/HeroSection";
-import ServicesSection from "@/components/ServicesSection";
-import DashboardShowcase from "@/components/DashboardShowcase";
-import CaraKerjaSection from "@/components/CaraKerjaSection";
-import CtaBanner from "@/components/CtaBanner";
-import Footer from "@/components/Footer";
+import { Navbar, Footer } from "@/components/common";
+import {
+  HeroSection,
+  ServicesSection,
+  DashboardShowcase,
+  CaraKerjaSection,
+  CtaBanner,
+} from "@/components/landing";
 
 export default function Home() {
   return (

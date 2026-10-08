@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import AppNavbar from "@/components/AppNavbar";
+import { AppNavbar, AppFooter } from "@/components/common";
 import {
   SESSIONS_DATA,
   SessionItem,
@@ -18,7 +18,6 @@ import {
   SesiCertModal,
   SesiFixModal,
   SesiToast,
-  SesiFooter,
 } from "@/components/sesi";
 
 export default function SesiHomePage() {
@@ -320,7 +319,7 @@ export default function SesiHomePage() {
       />
 
       {/* Footer */}
-      <SesiFooter onShowToast={showToast} />
+      <AppFooter onShowToast={showToast} />
     </div>
   );
 }

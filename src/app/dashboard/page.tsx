@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import AppNavbar from "@/components/AppNavbar";
-import { SesiFooter } from "@/components/sesi";
+import { AppNavbar, AppFooter } from "@/components/common";
 import {
   SessionItem,
   INITIAL_DASHBOARD_SESSIONS,
@@ -177,7 +176,7 @@ export default function DashboardPage() {
       </main>
 
       {/* 5. INSTITUTIONAL FOOTER */}
-      <SesiFooter
+      <AppFooter
         onShowToast={(msg) => triggerToast("Informasi Layanan", msg, "info")}
       />
 
