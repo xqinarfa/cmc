@@ -39,7 +39,7 @@ export default function FaqSection() {
           <button
             key={f.id}
             type="button"
-            onClick={() => setFaqFilter(f.id as any)}
+            onClick={() => setFaqFilter(f.id as "semua" | "umum" | "jp" | "teknis")}
             className={`px-4 py-1.5 rounded-md text-xs font-bold transition-colors cursor-pointer ${
               faqFilter === f.id
                 ? "bg-[#0a2244] text-white"

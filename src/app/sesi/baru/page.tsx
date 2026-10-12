@@ -59,7 +59,7 @@ export default function CatatSesiBaruPage() {
 
   const handlePrevStep = () => {
     if (currentStep > 1) {
-      setCurrentStep((prev) => (prev - 1) as any);
+      setCurrentStep((prev) => (prev - 1) as 1 | 2 | 3);
       if (typeof window !== "undefined") {
         window.scrollTo({ top: 0, behavior: "smooth" });
       }

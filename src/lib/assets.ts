@@ -10,6 +10,8 @@ export const ASSETS = {
   corpuLogo: "/assets/kemenhub-corpu-cropped.png",
   kemenhubEmblem: "/assets/aba9973ea35f637b03399d10be49da520b5c6dc7.svg",
   kemenhubFullLogo: "/assets/febee0dc3de182eb1dae3bdcc158fb031a384cb9.svg",
+  asnCoachingBg: "/assets/asn_coaching_background.jpg",
+  asnCoachingVideo: "/assets/asn_coaching_video.mp4",
   
   // Icons
   arrowRightWhite: "/assets/093a73556ab8925a299f7ef874d85070cecec379.svg",

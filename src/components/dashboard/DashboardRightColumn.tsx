@@ -67,7 +67,7 @@ export function DashboardRightColumn({
                   <button
                     key={filterTab.id}
                     type="button"
-                    onClick={() => setSessionFilter(filterTab.id as any)}
+                    onClick={() => setSessionFilter(filterTab.id as "all" | "coaching" | "mentoring")}
                     className={`relative px-2.5 py-1 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
                       sessionFilter === filterTab.id
                         ? "text-[#0a2244]"
