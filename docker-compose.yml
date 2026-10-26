@@ -1,0 +1,13 @@
+services:
+  cmc-web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: cmc-web:latest
+    container_name: cmc-web
+    restart: unless-stopped
+    ports:
+      - "8096:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
