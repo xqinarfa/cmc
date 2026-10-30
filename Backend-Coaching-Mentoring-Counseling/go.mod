@@ -1,6 +1,6 @@
 module github.com/kalanara/cmc-backend
 
-go 1.26.6
+go 1.24
 
 require (
 	dario.cat/mergo v1.0.2 // indirect
