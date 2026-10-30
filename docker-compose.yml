@@ -1,0 +1,78 @@
+services:
+  cmc-db:
+    image: postgres:16-alpine
+    container_name: cmc-db
+    restart: unless-stopped
+    ports:
+      - "5435:5432"
+    environment:
+      - POSTGRES_USER=cmc_user
+      - POSTGRES_PASSWORD=cmc_secure_pass_2026!
+      - POSTGRES_DB=cmc_db
+    volumes:
+      - cmc_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cmc_user -d cmc_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - cmc-network
+
+  cmc-backend:
+    build:
+      context: ./Backend-Coaching-Mentoring-Counseling
+      dockerfile: Dockerfile
+    image: cmc-backend:latest
+    container_name: cmc-backend
+    restart: unless-stopped
+    depends_on:
+      cmc-db:
+        condition: service_healthy
+    ports:
+      - "9095:8080"
+    environment:
+      - APP_NAME=coaching-mentoring-counseling
+      - APP_ENV=production
+      - LOG_LEVEL=info
+      - LOG_FORMAT=json
+      - HTTP_PORT=8080
+      - CORS_ALLOWED_ORIGINS=https://cmc.hulunautika.com,http://localhost:3000
+      - DB_HOST=cmc-db
+      - DB_PORT=5432
+      - DB_USER=cmc_user
+      - DB_PASSWORD=cmc_secure_pass_2026!
+      - DB_NAME=cmc_db
+      - DB_SSL_MODE=disable
+      - DB_AUTO_MIGRATE=true
+      - JWT_SECRET_KEY=kalanara-cmc-secret-key-production-min32char
+    networks:
+      - cmc-network
+
+  cmc-web:
+    build:
+      context: ./Frontend-Coaching-Mentoring-Counseling
+      dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_API_URL=/api/v1
+        - NEXT_PUBLIC_BASE_URL=https://cmc.hulunautika.com
+    image: cmc-web:latest
+    container_name: cmc-web
+    restart: unless-stopped
+    ports:
+      - "8096:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - NEXT_PUBLIC_API_URL=/api/v1
+      - NEXT_PUBLIC_BASE_URL=https://cmc.hulunautika.com
+    networks:
+      - cmc-network
+
+volumes:
+  cmc_pgdata:
+    name: cmc_pgdata
+
+networks:
+  cmc-network:
+    name: cmc-network
