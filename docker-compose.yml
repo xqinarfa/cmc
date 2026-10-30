@@ -19,6 +19,13 @@ services:
     networks:
       - cmc-network
 
+  cmc-redis:
+    image: redis:alpine
+    container_name: cmc-redis
+    restart: unless-stopped
+    networks:
+      - cmc-network
+
   cmc-backend:
     build:
       context: ./Backend-Coaching-Mentoring-Counseling
@@ -29,6 +36,8 @@ services:
     depends_on:
       cmc-db:
         condition: service_healthy
+      cmc-redis:
+        condition: service_started
     ports:
       - "9095:8080"
     environment:
@@ -45,6 +54,12 @@ services:
       - DB_NAME=cmc_db
       - DB_SSL_MODE=disable
       - DB_AUTO_MIGRATE=true
+      - REDIS_HOST=cmc-redis
+      - REDIS_PORT=6379
+      - MINIO_ENDPOINT=localhost:9000
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin
+      - MINIO_BUCKET_NAME=cmc-assets
       - JWT_SECRET_KEY=kalanara-cmc-secret-key-production-min32char
     networks:
       - cmc-network
