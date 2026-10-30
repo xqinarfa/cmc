@@ -1,0 +1,696 @@
+basePath: /
+definitions:
+  github_com_kalanara_cmc-backend_internal_modules_auth_domain.LoginInput:
+    properties:
+      email:
+        type: string
+      nip:
+        type: string
+      password:
+        type: string
+    required:
+    - password
+    type: object
+  github_com_kalanara_cmc-backend_internal_modules_auth_domain.RefreshTokenInput:
+    properties:
+      refresh_token:
+        type: string
+    required:
+    - refresh_token
+    type: object
+  github_com_kalanara_cmc-backend_internal_modules_auth_domain.RegisterInput:
+    properties:
+      email:
+        type: string
+      full_name:
+        maxLength: 100
+        minLength: 2
+        type: string
+      password:
+        maxLength: 64
+        minLength: 8
+        type: string
+      phone:
+        type: string
+      role:
+        allOf:
+        - $ref: '#/definitions/github_com_kalanara_cmc-backend_internal_modules_user_domain.Role'
+        enum:
+        - admin
+        - coach
+        - mentor
+        - counselor
+        - client
+    required:
+    - email
+    - full_name
+    - password
+    - role
+    type: object
+  github_com_kalanara_cmc-backend_internal_modules_auth_domain.SSOLoginRequest:
+    properties:
+      code:
+        type: string
+      redirect_uri:
+        type: string
+    required:
+    - code
+    type: object
+  github_com_kalanara_cmc-backend_internal_modules_session_domain.AddMeetingInput:
+    properties:
+      jp_collected:
+        maximum: 10
+        minimum: 1
+        type: integer
+      location:
+        maxLength: 255
+        type: string
+      meeting_type:
+        enum:
+        - Luring
+        - Daring
+        - Hybrid
+        type: string
+      scheduled_date:
+        maxLength: 100
+        type: string
+      summary:
+        maxLength: 1000
+        type: string
+      title:
+        maxLength: 255
+        minLength: 3
+        type: string
+    required:
+    - title
+    type: object
+  github_com_kalanara_cmc-backend_internal_modules_session_domain.BookSessionInput:
+    properties:
+      duration_minutes:
+        maximum: 240
+        minimum: 15
+        type: integer
+      notes:
+        maxLength: 1000
+        type: string
+      objective:
+        maxLength: 1000
+        type: string
+      practitioner_id:
+        type: string
+      scheduled_at:
+        type: string
+      session_format:
+        enum:
+        - 1-on-1
+        - 1-on-group
+        type: string
+      title:
+        maxLength: 255
+        minLength: 3
+        type: string
+      topic:
+        maxLength: 255
+        type: string
+      type:
+        allOf:
+        - $ref: '#/definitions/github_com_kalanara_cmc-backend_internal_modules_session_domain.SessionType'
+        enum:
+        - coaching
+        - mentoring
+        - counseling
+    required:
+    - practitioner_id
+    - title
+    - type
+    type: object
+  github_com_kalanara_cmc-backend_internal_modules_session_domain.SessionStatus:
+    enum:
+    - pending
+    - confirmed
+    - completed
+    - cancelled
+    - rejected
+    type: string
+    x-enum-comments:
+      StatusRejected: dikembalikan / perlu revisi
+    x-enum-descriptions:
+    - ""
+    - ""
+    - ""
+    - ""
+    - dikembalikan / perlu revisi
+    x-enum-varnames:
+    - StatusPending
+    - StatusConfirmed
+    - StatusCompleted
+    - StatusCancelled
+    - StatusRejected
+  github_com_kalanara_cmc-backend_internal_modules_session_domain.SessionType:
+    enum:
+    - coaching
+    - mentoring
+    - counseling
+    type: string
+    x-enum-varnames:
+    - TypeCoaching
+    - TypeMentoring
+    - TypeCounseling
+  github_com_kalanara_cmc-backend_internal_modules_session_domain.UpdateSessionStatusInput:
+    properties:
+      notes:
+        maxLength: 1000
+        type: string
+      status:
+        allOf:
+        - $ref: '#/definitions/github_com_kalanara_cmc-backend_internal_modules_session_domain.SessionStatus'
+        enum:
+        - pending
+        - confirmed
+        - completed
+        - cancelled
+        - rejected
+    required:
+    - status
+    type: object
+  github_com_kalanara_cmc-backend_internal_modules_user_domain.Role:
+    enum:
+    - admin
+    - coach
+    - mentor
+    - counselor
+    - client
+    type: string
+    x-enum-varnames:
+    - RoleAdmin
+    - RoleCoach
+    - RoleMentor
+    - RoleCounselor
+    - RoleClient
+host: localhost:8080
+info:
+  contact:
+    email: layanan.cmc@dephub.go.id
+    name: Tim Pengembang CMC Kemenhub
+    url: https://bpsdm.kemenhub.go.id
+  description: Enterprise Backend Service for Coaching, Mentoring & Counseling (CMC)
+    Kementerian Perhubungan RI.
+  license:
+    name: Proprietary
+    url: https://bpsdm.kemenhub.go.id
+  termsOfService: https://bpsdm.kemenhub.go.id/terms
+  title: Coaching, Mentoring & Counseling API
+  version: "2.0"
+paths:
+  /api/v1/auth/google:
+    get:
+      description: Redirects user to Google OAuth 2.0 authorization screen
+      responses:
+        "307":
+          description: Redirect to Google authorization URL
+          schema:
+            type: string
+      summary: Google OAuth Redirect
+      tags:
+      - auth
+    post:
+      consumes:
+      - application/json
+      description: Exchange Google authorization code for a CMC JWT token pair
+      parameters:
+      - description: Google Authorization Code
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_kalanara_cmc-backend_internal_modules_auth_domain.SSOLoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Google Authentication successful
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request payload
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Authentication failed
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Google SSO Login
+      tags:
+      - auth
+  /api/v1/auth/google/callback:
+    get:
+      description: Receives Google OAuth code via GET redirect, exchanges it for token,
+        and redirects to frontend callback
+      responses:
+        "307":
+          description: Redirect to frontend dashboard
+          schema:
+            type: string
+      summary: Google OAuth Callback via Backend
+      tags:
+      - auth
+  /api/v1/auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user using NIP or Email and Password, returns JWT
+        access and refresh tokens
+      parameters:
+      - description: Login Credentials
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_kalanara_cmc-backend_internal_modules_auth_domain.LoginInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Login successful
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request payload
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Invalid credentials
+          schema:
+            additionalProperties: true
+            type: object
+      summary: User Login (NIP / Email Credentials)
+      tags:
+      - auth
+  /api/v1/auth/logout:
+    post:
+      description: Invalidate and blacklist the current JWT access token in Redis
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully logged out
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Logout User
+      tags:
+      - auth
+  /api/v1/auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Exchange a valid refresh token for a new access token
+      parameters:
+      - description: Refresh Token Payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_kalanara_cmc-backend_internal_modules_auth_domain.RefreshTokenInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Token refreshed successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request payload
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Invalid or expired token
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Refresh Access Token
+      tags:
+      - auth
+  /api/v1/auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user account with role (coach, mentor, counselor,
+        client)
+      parameters:
+      - description: Registration Payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_kalanara_cmc-backend_internal_modules_auth_domain.RegisterInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: User registered successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request payload
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: User already exists
+          schema:
+            additionalProperties: true
+            type: object
+        "422":
+          description: Validation failed
+          schema:
+            additionalProperties: true
+            type: object
+      summary: User Registration
+      tags:
+      - auth
+  /api/v1/auth/sso:
+    get:
+      consumes:
+      - application/json
+      - text/html
+      description: |-
+        Validates EduHub token from query param. Supports pre-decoded user JSON from ?user= param.
+        Format callback aktual EduHub: /sso/auth/callback?token={JWT}&user={JSON}
+        JWT payload: {exp, id, image, name, nip, role, sector}
+        user JSON: {email, id, name, nip, role, image, sector}
+      parameters:
+      - description: EduHub JWT token
+        in: query
+        name: token
+        required: true
+        type: string
+      - description: Pre-decoded user JSON from EduHub callback
+        in: query
+        name: user
+        type: string
+      produces:
+      - application/json
+      - text/html
+      responses:
+        "200":
+          description: EduHub authentication successful
+          schema:
+            additionalProperties: true
+            type: object
+        "307":
+          description: Redirect to frontend dashboard callback
+          schema:
+            type: string
+        "400":
+          description: Token parameter is required
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Authentication failed
+          schema:
+            additionalProperties: true
+            type: object
+      summary: EduHub SSO Login
+      tags:
+      - auth
+    post:
+      consumes:
+      - application/json
+      description: Exchange SSO authorization code for CMC JWT token pair. Auto-registers
+        ASN pegawai if not found.
+      parameters:
+      - description: SSO Authorization Code
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_kalanara_cmc-backend_internal_modules_auth_domain.SSOLoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: SSO Authentication successful
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request payload
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: SSO Authentication failed
+          schema:
+            additionalProperties: true
+            type: object
+      summary: SSO Login (Kemenhub HubNet)
+      tags:
+      - auth
+  /api/v1/auth/sso/url:
+    get:
+      description: Returns official HubNet Kemenhub OAuth 2.0 authorization URL for
+        client redirection
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Authorization URL retrieved
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get SSO Kemenhub Authorization URL
+      tags:
+      - auth
+  /api/v1/sessions:
+    get:
+      description: Retrieves list of sessions for current authenticated user with
+        optional filter & search
+      parameters:
+      - description: 'Filter by status: pending, confirmed, completed, rejected, cancelled'
+        in: query
+        name: status
+        type: string
+      - description: 'Filter by type: coaching, mentoring, counseling'
+        in: query
+        name: type
+        type: string
+      - description: Search query by title or topic
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Sessions retrieved successfully
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List User Sessions
+      tags:
+      - sessions
+    post:
+      consumes:
+      - application/json
+      description: Create a new session, auto-generates pairing token (CMC-XXXX-XXXX)
+      parameters:
+      - description: Session Booking Payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_kalanara_cmc-backend_internal_modules_session_domain.BookSessionInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Session booked successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Validation failed
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Book a new Coaching / Mentoring / Counseling Session
+      tags:
+      - sessions
+  /api/v1/sessions/{id}:
+    get:
+      description: Retrieves session details, practitioner, client, and all meetings
+      parameters:
+      - description: Session UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Session details retrieved
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid ID
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Session not found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get Session Detail by ID
+      tags:
+      - sessions
+  /api/v1/sessions/{id}/meetings:
+    post:
+      consumes:
+      - application/json
+      description: Append an individual meeting record (Pertemuan) into a session
+      parameters:
+      - description: Session UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Meeting Payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_kalanara_cmc-backend_internal_modules_session_domain.AddMeetingInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Meeting added successfully
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Add Meeting to Session
+      tags:
+      - sessions
+  /api/v1/sessions/{id}/meetings/{meetingId}:
+    delete:
+      description: Removes a meeting draft from a session
+      parameters:
+      - description: Session UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Meeting UUID
+        in: path
+        name: meetingId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Meeting deleted successfully
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete Meeting Draft
+      tags:
+      - sessions
+  /api/v1/sessions/{id}/resend-notification:
+    post:
+      description: Sends an immediate notification reminder to Coach / Mentor
+      parameters:
+      - description: Session UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Reminder sent successfully
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Resend Session Notification
+      tags:
+      - sessions
+  /api/v1/sessions/{id}/status:
+    patch:
+      consumes:
+      - application/json
+      description: Change session status (pending, confirmed, completed, cancelled,
+        rejected)
+      parameters:
+      - description: Session UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Status Payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_kalanara_cmc-backend_internal_modules_session_domain.UpdateSessionStatusInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Status updated successfully
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update Session Status
+      tags:
+      - sessions
+schemes:
+- http
+- https
+securityDefinitions:
+  BearerAuth:
+    description: Type "Bearer" followed by a space and the JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

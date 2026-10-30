@@ -1,0 +1,10 @@
+version: v2
+plugins:
+  - local: C:/Users/kalan/go/bin/protoc-gen-go.exe
+    out: internal/modules/auth/delivery/grpc/proto
+    opt: paths=source_relative
+  - local: C:/Users/kalan/go/bin/protoc-gen-go-grpc.exe
+    out: internal/modules/auth/delivery/grpc/proto
+    opt: paths=source_relative
+inputs:
+  - directory: internal/modules/auth/delivery/grpc/proto

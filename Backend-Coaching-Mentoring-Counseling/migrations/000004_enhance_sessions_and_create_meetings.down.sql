@@ -1,0 +1,13 @@
+DROP TABLE IF EXISTS meetings;
+DROP INDEX IF EXISTS idx_sessions_token;
+ALTER TABLE sessions DROP COLUMN IF EXISTS alert_author;
+ALTER TABLE sessions DROP COLUMN IF EXISTS alert_text;
+ALTER TABLE sessions DROP COLUMN IF EXISTS alert_type;
+ALTER TABLE sessions DROP COLUMN IF EXISTS progress_note;
+ALTER TABLE sessions DROP COLUMN IF EXISTS target_jp;
+ALTER TABLE sessions DROP COLUMN IF EXISTS current_jp;
+ALTER TABLE sessions DROP COLUMN IF EXISTS session_format;
+ALTER TABLE sessions DROP COLUMN IF EXISTS objective;
+ALTER TABLE sessions DROP COLUMN IF EXISTS topic;
+ALTER TABLE sessions DROP COLUMN IF EXISTS token;
+
