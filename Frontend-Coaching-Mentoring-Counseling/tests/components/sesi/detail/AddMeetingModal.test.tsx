@@ -1,7 +1,7 @@
 import React from "react";
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
-import { AddMeetingModal } from "./AddMeetingModal";
+import { AddMeetingModal } from "@/components/sesi/detail/AddMeetingModal";
 
 describe("AddMeetingModal Component", () => {
   it("renders correctly when open and handles form changes and submission", () => {
@@ -80,4 +80,3 @@ describe("AddMeetingModal Component", () => {
     expect(container.firstChild).toBeNull();
   });
 });
-

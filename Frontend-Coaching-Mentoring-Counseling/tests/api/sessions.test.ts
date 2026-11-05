@@ -9,7 +9,7 @@ import {
   resendNotification,
   fetchPractitioners,
   fetchCurrentUser,
-} from "./sessions";
+} from "@/lib/api/sessions";
 
 describe("sessions API client", () => {
   const originalFetch = global.fetch;
@@ -38,9 +38,9 @@ describe("sessions API client", () => {
     const result = await fetchSessions({ status: "pending", type: "coaching" });
 
     expect(global.fetch).toHaveBeenCalledTimes(1);
-    const [url, options] = (global.fetch as any).mock.calls[0];
+    const [url, options] = vi.mocked(global.fetch).mock.calls[0] as [string, RequestInit];
     expect(url).toContain("/sessions?status=pending&type=coaching");
-    expect(options.headers.Authorization).toBe("Bearer fake-jwt-token-123");
+    expect((options.headers as Record<string, string>).Authorization).toBe("Bearer fake-jwt-token-123");
     expect(result).toEqual(mockSessions);
   });
 
@@ -55,7 +55,7 @@ describe("sessions API client", () => {
 
     const result = await fetchSession("session-uuid");
     expect(result).toEqual(mockSession);
-    const [url] = (global.fetch as any).mock.calls[0];
+    const [url] = vi.mocked(global.fetch).mock.calls[0] as [string, RequestInit];
     expect(url).toContain("/sessions/session-uuid");
   });
 
@@ -76,9 +76,9 @@ describe("sessions API client", () => {
 
     const result = await bookSession(input);
     expect(result).toEqual(created);
-    const [, options] = (global.fetch as any).mock.calls[0];
+    const [, options] = vi.mocked(global.fetch).mock.calls[0] as [string, RequestInit];
     expect(options.method).toBe("POST");
-    expect(JSON.parse(options.body)).toEqual(input);
+    expect(JSON.parse(options.body as string)).toEqual(input);
   });
 
   it("updateSessionStatus should send PATCH with status and notes", async () => {
@@ -89,10 +89,10 @@ describe("sessions API client", () => {
     });
 
     await updateSessionStatus("s-1", "confirmed", "Catatan persetujuan");
-    const [url, options] = (global.fetch as any).mock.calls[0];
+    const [url, options] = vi.mocked(global.fetch).mock.calls[0] as [string, RequestInit];
     expect(url).toContain("/sessions/s-1/status");
     expect(options.method).toBe("PATCH");
-    expect(JSON.parse(options.body)).toEqual({
+    expect(JSON.parse(options.body as string)).toEqual({
       status: "confirmed",
       notes: "Catatan persetujuan",
     });
@@ -113,7 +113,7 @@ describe("sessions API client", () => {
 
     const result = await addMeeting("s-1", meetingPayload);
     expect(result.title).toBe("Pertemuan 1");
-    const [url, options] = (global.fetch as any).mock.calls[0];
+    const [url, options] = vi.mocked(global.fetch).mock.calls[0] as [string, RequestInit];
     expect(url).toContain("/sessions/s-1/meetings");
     expect(options.method).toBe("POST");
   });
@@ -126,7 +126,7 @@ describe("sessions API client", () => {
     });
 
     await deleteMeeting("s-1", "m-1");
-    const [url, options] = (global.fetch as any).mock.calls[0];
+    const [url, options] = vi.mocked(global.fetch).mock.calls[0] as [string, RequestInit];
     expect(url).toContain("/sessions/s-1/meetings/m-1");
     expect(options.method).toBe("DELETE");
   });
@@ -139,7 +139,7 @@ describe("sessions API client", () => {
     });
 
     await resendNotification("s-1");
-    const [url, options] = (global.fetch as any).mock.calls[0];
+    const [url, options] = vi.mocked(global.fetch).mock.calls[0] as [string, RequestInit];
     expect(url).toContain("/sessions/s-1/resend-notification");
     expect(options.method).toBe("POST");
   });
@@ -187,4 +187,3 @@ describe("sessions API client", () => {
     await expect(fetchSessions()).rejects.toThrow("Authorization header is required");
   });
 });
-

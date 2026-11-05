@@ -1,7 +1,7 @@
 import React from "react";
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
-import Step1DataSesi from "./Step1DataSesi";
+import Step1DataSesi from "@/components/sesi/baru/Step1DataSesi";
 
 describe("Step1DataSesi Component", () => {
   it("renders form elements and triggers callback on change", () => {
@@ -40,4 +40,3 @@ describe("Step1DataSesi Component", () => {
     expect(handleTujuanChange).toHaveBeenCalledWith("Tujuan Diubah");
   });
 });
-

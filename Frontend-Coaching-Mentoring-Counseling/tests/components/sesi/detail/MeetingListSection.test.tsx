@@ -1,7 +1,7 @@
 import React from "react";
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
-import MeetingListSection from "./MeetingListSection";
+import MeetingListSection from "@/components/sesi/detail/MeetingListSection";
 import { Meeting } from "@/lib/sessionData";
 
 // Mock next/navigation
@@ -74,4 +74,3 @@ describe("MeetingListSection Component", () => {
     expect(handleViewDetail).toHaveBeenCalledWith(mockMeetings[0]);
   });
 });
-

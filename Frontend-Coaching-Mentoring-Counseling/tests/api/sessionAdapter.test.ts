@@ -2,8 +2,8 @@ import { describe, it, expect } from "vitest";
 import {
   mapApiSessionToSessionItem,
   mapApiMeetingToMeeting,
-} from "./sessionAdapter";
-import type { ApiSession, ApiMeeting } from "./sessions";
+} from "@/lib/api/sessionAdapter";
+import type { ApiSession, ApiMeeting } from "@/lib/api/sessions";
 
 describe("sessionAdapter", () => {
   describe("mapApiSessionToSessionItem", () => {
@@ -177,4 +177,3 @@ describe("sessionAdapter", () => {
     });
   });
 });
-

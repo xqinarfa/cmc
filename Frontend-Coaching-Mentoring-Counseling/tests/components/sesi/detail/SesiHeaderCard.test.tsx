@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
-import SesiHeaderCard from "./SesiHeaderCard";
+import SesiHeaderCard from "@/components/sesi/detail/SesiHeaderCard";
 
 describe("SesiHeaderCard Component", () => {
   it("should render session details, JP progress, and practitioner info", () => {

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
-import SesiCard from "./SesiCard";
+import SesiCard from "@/components/sesi/SesiCard";
 import type { SessionItem } from "@/lib/sessionData";
 
 describe("SesiCard Component", () => {
