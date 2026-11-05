@@ -15,7 +15,7 @@ export default function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 backdrop-blur-md bg-white/95 border-b border-[#f1f5f9] shadow-xs">
-      <div className="max-w-[1440px] mx-auto px-6 sm:px-10 lg:px-16 xl:px-[80px] h-20 flex items-center justify-between gap-4">
+      <div className="w-full mx-auto px-6 sm:px-12 lg:px-18 xl:px-24 h-20 flex items-center justify-between gap-4">
         {/* Left: Mobile Trigger & Branding */}
         <div className="flex items-center gap-3">
           <button
@@ -26,12 +26,32 @@ export default function Navbar() {
             aria-expanded={mobileMenuOpen}
           >
             {mobileMenuOpen ? (
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             ) : (
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
               </svg>
             )}
           </button>
@@ -62,67 +82,76 @@ export default function Navbar() {
           </Link>
         </div>
 
-        {/* Center: Desktop Nav links */}
-        <nav className="hidden lg:flex items-center gap-8" aria-label="Navigasi Utama">
-          <Link
-            href="/"
-            className={`relative py-2 text-sm font-semibold transition-colors ${
-              isHome ? "text-[#2563eb]" : "text-[#475569] hover:text-[#0f172a]"
-            }`}
+        <div className="justify-between items-center gap-8 flex">
+          {/* Center: Desktop Nav links */}
+          <nav
+            className="hidden lg:flex items-center gap-8"
+            aria-label="Navigasi Utama"
           >
-            Beranda
-            {isHome && (
-              <motion.span
-                layoutId="navIndicator"
-                className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#2563eb] rounded-full"
-                transition={{ type: "spring", stiffness: 450, damping: 32 }}
-              />
-            )}
-          </Link>
-          <Link
-            href="/tentang"
-            className={`relative py-2 text-sm font-semibold transition-colors ${
-              isAbout ? "text-[#2563eb]" : "text-[#475569] hover:text-[#0f172a]"
-            }`}
-          >
-            Tentang CMC
-            {isAbout && (
-              <motion.span
-                layoutId="navIndicator"
-                className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#2563eb] rounded-full"
-                transition={{ type: "spring", stiffness: 450, damping: 32 }}
-              />
-            )}
-          </Link>
-          <Link
-            href={isHome ? "#cara-kerja" : "/#cara-kerja"}
-            className="text-sm font-medium text-[#475569] hover:text-[#0f172a] transition-colors"
-          >
-            Cara Kerja
-          </Link>
-          <Link
-            href={isAbout ? "#faq" : "/tentang#faq"}
-            className="text-sm font-medium text-[#475569] hover:text-[#0f172a] transition-colors"
-          >
-            FAQ
-          </Link>
-        </nav>
+            <Link
+              href="/"
+              className={`relative py-2 text-sm font-semibold transition-colors ${
+                isHome
+                  ? "text-[#2563eb]"
+                  : "text-[#475569] hover:text-[#0f172a]"
+              }`}
+            >
+              Beranda
+              {isHome && (
+                <motion.span
+                  layoutId="navIndicator"
+                  className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#2563eb] rounded-full"
+                  transition={{ type: "spring", stiffness: 450, damping: 32 }}
+                />
+              )}
+            </Link>
+            <Link
+              href="/tentang"
+              className={`relative py-2 text-sm font-semibold transition-colors ${
+                isAbout
+                  ? "text-[#2563eb]"
+                  : "text-[#475569] hover:text-[#0f172a]"
+              }`}
+            >
+              Tentang CMC
+              {isAbout && (
+                <motion.span
+                  layoutId="navIndicator"
+                  className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#2563eb] rounded-full"
+                  transition={{ type: "spring", stiffness: 450, damping: 32 }}
+                />
+              )}
+            </Link>
+            <Link
+              href={isHome ? "#cara-kerja" : "/#cara-kerja"}
+              className="text-sm font-medium text-[#475569] hover:text-[#0f172a] transition-colors"
+            >
+              Cara Kerja
+            </Link>
+            <Link
+              href={isAbout ? "#faq" : "/tentang#faq"}
+              className="text-sm font-medium text-[#475569] hover:text-[#0f172a] transition-colors"
+            >
+              FAQ
+            </Link>
+          </nav>
 
-        {/* Right: SIK Login */}
-        <div className="flex items-center gap-3">
-          <Link
-            href="/login"
-            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-[#0a1d37] hover:bg-[#142d54] text-white text-xs sm:text-sm font-semibold tracking-wide transition-all shadow-sm hover:shadow-md active:scale-95 cursor-pointer"
-          >
-            <span>Masuk dengan SIK</span>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={ASSETS.navArrowWhite}
-              alt=""
-              className="w-4 h-4 shrink-0"
-              aria-hidden="true"
-            />
-          </Link>
+          {/* Right: SIK Login */}
+          <div className="flex items-center gap-3">
+            <Link
+              href="/login"
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-[#0a1d37] hover:bg-[#142d54] text-white text-xs sm:text-sm font-semibold tracking-wide transition-all shadow-sm hover:shadow-md active:scale-95 cursor-pointer"
+            >
+              <span>Masuk dengan SIK</span>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={ASSETS.navArrowWhite}
+                alt=""
+                className="w-4 h-4 shrink-0"
+                aria-hidden="true"
+              />
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -140,7 +169,9 @@ export default function Navbar() {
               href="/"
               onClick={() => setMobileMenuOpen(false)}
               className={`px-3.5 py-2 rounded-xl text-sm font-semibold transition-colors ${
-                isHome ? "bg-blue-50 text-blue-700" : "text-slate-700 hover:bg-slate-50"
+                isHome
+                  ? "bg-blue-50 text-blue-700"
+                  : "text-slate-700 hover:bg-slate-50"
               }`}
             >
               Beranda
@@ -149,7 +180,9 @@ export default function Navbar() {
               href="/tentang"
               onClick={() => setMobileMenuOpen(false)}
               className={`px-3.5 py-2 rounded-xl text-sm font-semibold transition-colors ${
-                isAbout ? "bg-blue-50 text-blue-700" : "text-slate-700 hover:bg-slate-50"
+                isAbout
+                  ? "bg-blue-50 text-blue-700"
+                  : "text-slate-700 hover:bg-slate-50"
               }`}
             >
               Tentang CMC

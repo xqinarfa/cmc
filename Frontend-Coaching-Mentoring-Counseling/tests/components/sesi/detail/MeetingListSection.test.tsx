@@ -74,3 +74,4 @@ describe("MeetingListSection Component", () => {
     expect(handleViewDetail).toHaveBeenCalledWith(mockMeetings[0]);
   });
 });
+

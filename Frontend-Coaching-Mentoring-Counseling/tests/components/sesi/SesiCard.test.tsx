@@ -76,3 +76,4 @@ describe("SesiCard Component", () => {
     expect(lanjutLink).toHaveAttribute("href", "/sesi/detail/sesi-3");
   });
 });
+

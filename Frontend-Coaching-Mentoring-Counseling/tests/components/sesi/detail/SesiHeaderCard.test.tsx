@@ -52,3 +52,4 @@ describe("SesiHeaderCard Component", () => {
     expect(screen.getByText(/6\s*\/\s*6 JP/)).toBeInTheDocument();
   });
 });
+

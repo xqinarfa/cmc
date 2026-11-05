@@ -3,7 +3,7 @@ import { ASSETS } from "@/lib/assets";
 
 export default function HeroSection() {
   return (
-    <section className="relative w-full bg-gradient-to-b from-[#f8fafc]/70 via-white to-white border-b border-[#f1f5f9] pt-[56px] pb-[80px] overflow-hidden">
+    <section className="relative w-full bg-gradient-to-b from-[#f8fafc]/70 via-white to-white border-b border-[#f1f5f9] pb-[80px] overflow-hidden">
       {/* 
         Full-bleed Photo Banner: strictly 1329px wide × 468px high anchored to the right edge.
         This reproduces Figma's exact 1:1 image crop (hiding the top RUANG PELATIHAN banner 
@@ -11,7 +11,7 @@ export default function HeroSection() {
       */}
       <div
         aria-hidden
-        className="absolute top-[56px] right-0 h-[468px] w-[1329px] pointer-events-none select-none overflow-hidden z-0"
+        className="absolute right-0 h-[468px] w-[1329px] pointer-events-none select-none overflow-hidden z-0"
       >
         <img
           src={ASSETS.heroBanner}

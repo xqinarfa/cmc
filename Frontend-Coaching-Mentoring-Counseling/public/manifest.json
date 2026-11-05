@@ -1,0 +1,22 @@
+{
+  "short_name": "CMC Kemenhub",
+  "name": "CMC — Coaching, Mentoring & Counseling Kemenhub",
+  "description": "Platform Coaching, Mentoring, dan Counseling Corporate University Kementerian Perhubungan Republik Indonesia",
+  "icons": [
+    {
+      "src": "/assets/kemenhub-corpu-cropped.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/assets/kemenhub-corpu-logo.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#FCFDFE",
+  "theme_color": "#0a2540",
+  "display": "standalone",
+  "orientation": "portrait"
+}
