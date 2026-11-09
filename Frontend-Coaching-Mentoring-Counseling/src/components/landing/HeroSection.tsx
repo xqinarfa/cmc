@@ -3,7 +3,7 @@ import { ASSETS } from "@/lib/assets";
 
 export default function HeroSection() {
   return (
-    <section className="relative w-full bg-gradient-to-b from-[#f8fafc]/70 via-white to-white border-b border-[#f1f5f9] pb-[80px] overflow-hidden">
+    <section className="relative w-full min-h-[calc(100vh-80px)] min-h-[calc(100dvh-80px)] flex flex-col justify-between bg-gradient-to-b from-[#f8fafc]/70 via-white to-white border-b border-[#f1f5f9] pb-8 lg:pb-12 overflow-hidden">
       {/* 
         Full-bleed Photo Banner: strictly 1329px wide × 468px high anchored to the right edge.
         This reproduces Figma's exact 1:1 image crop (hiding the top RUANG PELATIHAN banner 
@@ -11,7 +11,7 @@ export default function HeroSection() {
       */}
       <div
         aria-hidden
-        className="absolute right-0 h-[468px] w-[1329px] pointer-events-none select-none overflow-hidden z-0"
+        className="absolute right-0 top-0 h-[468px] lg:h-[520px] w-[1329px] pointer-events-none select-none overflow-hidden z-0"
       >
         <img
           src={ASSETS.heroBanner}
@@ -51,9 +51,9 @@ export default function HeroSection() {
       </div>
 
       {/* Main Container aligned to 1440px Grid */}
-      <div className="relative z-10 max-w-[1440px] mx-auto px-6 sm:px-10 lg:px-16 xl:px-[80px]">
-        {/* Hero Banner Area: strictly 468px high on desktop */}
-        <div className="relative w-full min-h-[468px] lg:h-[468px] flex items-center">
+      <div className="relative z-10 max-w-[1440px] mx-auto px-6 sm:px-10 lg:px-16 xl:px-[80px] w-full flex-1 flex flex-col justify-between">
+        {/* Hero Banner Area: flex-1 ensures balanced vertical centering on full-height viewports */}
+        <div className="relative w-full flex-1 min-h-[468px] flex items-center py-6 lg:py-4">
           {/* Left Hero Content (Figma 748:3482) */}
           <div className="relative z-10 flex flex-col gap-[24px] items-start max-w-[560px] pl-2 sm:pl-4 lg:pl-[32px] py-10 lg:py-0">
             {/* Tagline */}
@@ -112,7 +112,7 @@ export default function HeroSection() {
           </div>
 
           {/* Floating White Glass Card at Bottom (Figma 748:3502) */}
-          <div className="relative lg:absolute z-20 mt-4 lg:mt-0 lg:-bottom-[37px] lg:right-6 xl:right-[32px] w-full sm:w-[480px] lg:w-[532px] backdrop-blur-[6px] bg-white/95 border border-white/60 border-solid rounded-[12px] p-[16px] shadow-[0px_20px_25px_-5px_rgba(0,0,0,0.1),0px_8px_10px_-6px_rgba(0,0,0,0.1)] flex items-center gap-[14px]">
+          <div className="relative lg:absolute z-20 mt-6 lg:mt-0 lg:-bottom-[28px] lg:right-6 xl:right-[32px] w-full sm:w-[480px] lg:w-[532px] backdrop-blur-[6px] bg-white/95 border border-white/60 border-solid rounded-[12px] p-[16px] shadow-[0px_20px_25px_-5px_rgba(0,0,0,0.1),0px_8px_10px_-6px_rgba(0,0,0,0.1)] flex items-center gap-[14px]">
             <div className="w-[40px] h-[40px] rounded-[8px] bg-[#eff6ff] flex items-center justify-center shrink-0">
               <img
                 src={ASSETS.sparkleBlue}
@@ -132,11 +132,13 @@ export default function HeroSection() {
           </div>
         </div>
 
-        {/* Gap before Trust Features Bar: 56px */}
-        <div className="h-[56px] w-full" />
+        {/* Bottom Section: Gap + Trust Features Bar pinned cleanly to bottom of viewport */}
+        <div className="w-full mt-auto">
+          {/* Gap before Trust Features Bar */}
+          <div className="h-[40px] lg:h-[56px] w-full shrink-0" />
 
-        {/* Trust Features Bar (Figma 748:3512) - strictly isolated on clean white background */}
-        <div className="w-full pt-[32px] border-t border-[rgba(226,232,240,0.8)] border-solid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[24px]">
+          {/* Trust Features Bar (Figma 748:3512) - strictly isolated on clean white background */}
+          <div className="w-full pt-[28px] lg:pt-[32px] border-t border-[rgba(226,232,240,0.8)] border-solid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[24px]">
           {/* Item 1 */}
           <div className="flex items-start gap-[12px]">
             <div className="w-[36px] h-[36px] rounded-[8px] bg-[#eff6ff] flex items-center justify-center shrink-0">
@@ -216,6 +218,7 @@ export default function HeroSection() {
               </p>
             </div>
           </div>
+        </div>
         </div>
       </div>
     </section>
