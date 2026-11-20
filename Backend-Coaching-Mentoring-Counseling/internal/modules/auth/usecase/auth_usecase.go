@@ -17,6 +17,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/kalanara/cmc-backend/internal/config"
 	authdomain "github.com/kalanara/cmc-backend/internal/modules/auth/domain"
+	sikdomain "github.com/kalanara/cmc-backend/internal/modules/sik/domain"
 	userdomain "github.com/kalanara/cmc-backend/internal/modules/user/domain"
 	sharederrors "github.com/kalanara/cmc-backend/internal/shared/domain"
 )
@@ -28,6 +29,7 @@ type authUsecase struct {
 	jwtService     authdomain.JWTService
 	eventPublisher authdomain.EventPublisher
 	ssoCfg         config.SSOConfig
+	sikRepo        sikdomain.SIKRepository
 	httpClient     *http.Client
 }
 
@@ -38,7 +40,13 @@ func NewAuthUsecase(
 	jwtService authdomain.JWTService,
 	eventPublisher authdomain.EventPublisher,
 	ssoCfg config.SSOConfig,
+	optionalSIKRepo ...sikdomain.SIKRepository,
 ) authdomain.AuthUsecase {
+	var sikRepo sikdomain.SIKRepository
+	if len(optionalSIKRepo) > 0 {
+		sikRepo = optionalSIKRepo[0]
+	}
+
 	return &authUsecase{
 		userRepo:       userRepo,
 		blacklistRepo:  blacklistRepo,
@@ -46,8 +54,60 @@ func NewAuthUsecase(
 		jwtService:     jwtService,
 		eventPublisher: eventPublisher,
 		ssoCfg:         ssoCfg,
+		sikRepo:        sikRepo,
 		httpClient:     &http.Client{Timeout: 10 * time.Second},
 	}
+}
+
+func (u *authUsecase) syncUserFromSIK(ctx context.Context, user *userdomain.User) {
+	if u.sikRepo == nil || user.NIP == "" {
+		return
+	}
+
+	pegawai, err := u.sikRepo.FindByNIP(ctx, user.NIP)
+	if err != nil {
+		return
+	}
+
+	user.GelarDepan = pegawai.GelarDepan
+	user.GelarBelakang = pegawai.GelarBelakang
+	user.TempatLahir = pegawai.TempatLahir
+	user.TanggalLahir = pegawai.TanggalLahir
+	user.JenisKelamin = pegawai.JenisKelamin
+	user.Agama = pegawai.Agama
+	user.Jabatan = pegawai.Jabatan
+	user.JenisJabatan = pegawai.JenisJabatan
+	user.PangkatGolongan = pegawai.FormatPangkatGolongan()
+	user.UnitKerja = pegawai.UnitKerja
+	user.SatuanKerja = pegawai.SatuanKerja
+	if pegawai.InstansiInduk != "" {
+		user.InstansiInduk = pegawai.InstansiInduk
+	}
+	user.Eselon = pegawai.Eselon
+	if pegawai.StatusKepegawaian != "" {
+		user.StatusKepegawaian = pegawai.StatusKepegawaian
+	}
+	user.PendidikanTerakhir = pegawai.PendidikanTerakhir
+	user.AtasanLangsungNIP = pegawai.AtasanLangsungNIP
+	user.AtasanLangsungNama = pegawai.AtasanLangsungNama
+	user.AtasanLangsungJabatan = pegawai.AtasanLangsungJabatan
+	user.MasaKerjaTahun = pegawai.MasaKerjaTahun
+	user.MasaKerjaBulan = pegawai.MasaKerjaBulan
+
+	if user.AvatarURL == "" && pegawai.FotoURL != "" {
+		user.AvatarURL = pegawai.FotoURL
+	}
+	if user.Phone == "" && pegawai.NoHP != "" {
+		user.Phone = pegawai.NoHP
+	}
+
+	now := time.Now().UTC()
+	user.SIKSyncedAt = &now
+
+	rawBytes, _ := json.Marshal(pegawai)
+	user.SIKData = string(rawBytes)
+
+	_ = u.userRepo.Update(ctx, user)
 }
 
 func (u *authUsecase) Register(ctx context.Context, input authdomain.RegisterInput) (*authdomain.AuthResponse, error) {
@@ -127,9 +187,79 @@ func (u *authUsecase) Login(ctx context.Context, input authdomain.LoginInput) (*
 
 	if err != nil {
 		if errors.Is(err, sharederrors.ErrUserNotFound) {
-			return nil, sharederrors.ErrInvalidCredentials
+			// If employee exists in SIK and is logging in using their NIP as password:
+			if u.sikRepo != nil && identifier != "" && !strings.Contains(identifier, "@") && input.Password == identifier {
+				pegawai, errPegawai := u.sikRepo.FindByNIP(ctx, identifier)
+				if errPegawai == nil && pegawai != nil {
+					hashedPassword, hashErr := u.passwordHasher.HashPassword(input.Password)
+					if hashErr == nil {
+						email := strings.TrimSpace(pegawai.EmailDinas)
+						if email == "" {
+							email = strings.TrimSpace(pegawai.EmailPribadi)
+						}
+						if email == "" {
+							email = fmt.Sprintf("%s@dephub.go.id", identifier)
+						}
+						existingUserWithEmail, _ := u.userRepo.FindByEmail(ctx, email)
+						if existingUserWithEmail != nil && existingUserWithEmail.NIP != identifier {
+							email = fmt.Sprintf("%s@dephub.go.id", identifier)
+						}
+						now := time.Now().UTC()
+						rawBytes, _ := json.Marshal(pegawai)
+						sikDataStr := string(rawBytes)
+						if sikDataStr == "" {
+							sikDataStr = "{}"
+						}
+						newUser := &userdomain.User{
+							ID:                 uuid.New(),
+							NIP:                identifier,
+							Email:              email,
+							PasswordHash:       hashedPassword,
+							FullName:           pegawai.FormatNamaLengkap(),
+							Role:               userdomain.RolePegawai,
+							Phone:              pegawai.NoHP,
+							AvatarURL:          pegawai.FotoURL,
+							Provider:           "LOCAL",
+							IsActive:           true,
+							GelarDepan:         pegawai.GelarDepan,
+							GelarBelakang:      pegawai.GelarBelakang,
+							TempatLahir:        pegawai.TempatLahir,
+							TanggalLahir:       pegawai.TanggalLahir,
+							JenisKelamin:       pegawai.JenisKelamin,
+							Agama:              pegawai.Agama,
+							Jabatan:            pegawai.Jabatan,
+							JenisJabatan:       pegawai.JenisJabatan,
+							PangkatGolongan:    pegawai.FormatPangkatGolongan(),
+							UnitKerja:          pegawai.UnitKerja,
+							SubUnitKerja:       pegawai.SubUnitKerja,
+							SubUnitKerjaKode:   pegawai.SubUnitKerjaKode,
+							SatuanKerja:        pegawai.SatuanKerja,
+							InstansiInduk:      pegawai.InstansiInduk,
+							Eselon:             pegawai.Eselon,
+							StatusKepegawaian:  pegawai.StatusKepegawaian,
+							PendidikanTerakhir: pegawai.PendidikanTerakhir,
+							AtasanLangsungNIP:  pegawai.AtasanLangsungNIP,
+							AtasanLangsungNama: pegawai.AtasanLangsungNama,
+							AtasanLangsungJabatan: pegawai.AtasanLangsungJabatan,
+							MasaKerjaTahun:     pegawai.MasaKerjaTahun,
+							MasaKerjaBulan:     pegawai.MasaKerjaBulan,
+							SIKData:            sikDataStr,
+							SIKSyncedAt:        &now,
+						}
+						if createErr := u.userRepo.Create(ctx, newUser); createErr == nil {
+							user = newUser
+							err = nil
+						}
+					}
+				}
+			}
 		}
-		return nil, err
+		if err != nil {
+			if errors.Is(err, sharederrors.ErrUserNotFound) {
+				return nil, sharederrors.ErrInvalidCredentials
+			}
+			return nil, err
+		}
 	}
 
 	if !user.IsActive {
@@ -138,6 +268,11 @@ func (u *authUsecase) Login(ctx context.Context, input authdomain.LoginInput) (*
 
 	if !u.passwordHasher.CheckPassword(input.Password, user.PasswordHash) {
 		return nil, sharederrors.ErrInvalidCredentials
+	}
+
+	// Sync from SIK master registry if not yet synced or available
+	if user.NIP != "" && (user.SIKSyncedAt == nil || u.sikRepo != nil) {
+		u.syncUserFromSIK(ctx, user)
 	}
 
 	tokens, err := u.jwtService.GenerateTokenPair(user)
@@ -345,7 +480,7 @@ func (u *authUsecase) LoginSSO(ctx context.Context, req authdomain.SSOLoginReque
 			Email:        email,
 			FullName:     name,
 			PasswordHash: randomPwd,
-			Role:         userdomain.RoleClient,
+			Role:         userdomain.RolePegawai,
 			AvatarURL:    photo,
 			Provider:     "HUBNET",
 			IsActive:     true,
@@ -394,6 +529,9 @@ func (u *authUsecase) LoginSSO(ctx context.Context, req authdomain.SSOLoginReque
 	if !user.IsActive {
 		return nil, sharederrors.ErrForbidden
 	}
+
+	// Always sync SIK details for SSO users
+	u.syncUserFromSIK(ctx, user)
 
 	tokens, err := u.jwtService.GenerateTokenPair(user)
 	if err != nil {
@@ -523,7 +661,7 @@ func (u *authUsecase) LoginEduhub(ctx context.Context, token string, preDecodedU
 			Email:        email,
 			FullName:     name,
 			PasswordHash: randomPwd,
-			Role:         userdomain.RoleClient,
+			Role:         userdomain.RolePegawai,
 			AvatarURL:    photo,
 			Provider:     "EDUHUB",
 			IsActive:     true,
@@ -705,7 +843,7 @@ func (u *authUsecase) LoginGoogle(ctx context.Context, code string, redirectURI 
 			Email:        googleUser.Email,
 			FullName:     name,
 			PasswordHash: randomPwd,
-			Role:         userdomain.RoleClient,
+			Role:         userdomain.RolePegawai,
 			AvatarURL:    googleUser.Picture,
 			Provider:     "GOOGLE",
 			IsActive:     true,
@@ -748,6 +886,9 @@ func (u *authUsecase) LoginGoogle(ctx context.Context, code string, redirectURI 
 	if !user.IsActive {
 		return nil, sharederrors.ErrForbidden
 	}
+
+	// Always sync SIK details for SSO users
+	u.syncUserFromSIK(ctx, user)
 
 	tokens, err := u.jwtService.GenerateTokenPair(user)
 	if err != nil {

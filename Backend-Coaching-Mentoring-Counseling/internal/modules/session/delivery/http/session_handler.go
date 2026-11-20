@@ -252,6 +252,62 @@ func (h *SessionHandler) AddMeeting(c *gin.Context) {
 	response.JSON(c, http.StatusCreated, "Meeting added successfully", meeting)
 }
 
+// UpdateMeeting godoc
+// @Summary      Update Meeting
+// @Description  Update details of an existing meeting in a session
+// @Tags         sessions
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id         path string                            true "Session UUID"
+// @Param        meetingId  path string                            true "Meeting UUID"
+// @Param        request    body sessiondomain.UpdateMeetingInput  true "Meeting Payload"
+// @Success      200  {object}  map[string]interface{} "Meeting updated successfully"
+// @Router       /api/v1/sessions/{id}/meetings/{meetingId} [put]
+func (h *SessionHandler) UpdateMeeting(c *gin.Context) {
+	userIDVal, exists := c.Get("UserID")
+	if !exists {
+		response.Error(c, http.StatusUnauthorized, "UNAUTHORIZED", "Missing user context", nil)
+		return
+	}
+	userID := userIDVal.(uuid.UUID)
+	roleVal, _ := c.Get("UserRole")
+	role := roleVal.(userdomain.Role)
+
+	idParam := c.Param("id")
+	sessionID, err := uuid.Parse(idParam)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "INVALID_ID", "Session ID must be a valid UUID", nil)
+		return
+	}
+
+	meetingIDParam := c.Param("meetingId")
+	meetingID, err := uuid.Parse(meetingIDParam)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "INVALID_ID", "Meeting ID must be a valid UUID", nil)
+		return
+	}
+
+	var input sessiondomain.UpdateMeetingInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		response.Error(c, http.StatusBadRequest, "INVALID_BODY", "Invalid JSON payload provided", nil)
+		return
+	}
+
+	if valErrors := h.validator.ValidateStruct(input); len(valErrors) > 0 {
+		response.Error(c, http.StatusUnprocessableEntity, "VALIDATION_FAILED", "Validation failed for request fields", valErrors)
+		return
+	}
+
+	meeting, err := h.sessionUsecase.UpdateMeeting(c.Request.Context(), sessionID, meetingID, userID, role, input)
+	if err != nil {
+		response.HandleDomainError(c, err)
+		return
+	}
+
+	response.JSON(c, http.StatusOK, "Meeting updated successfully", meeting)
+}
+
 // DeleteMeeting godoc
 // @Summary      Delete Meeting Draft
 // @Description  Removes a meeting draft from a session
@@ -321,4 +377,163 @@ func (h *SessionHandler) ResendNotification(c *gin.Context) {
 	}
 
 	response.JSON(c, http.StatusOK, "Notification reminder sent successfully", nil)
+}
+
+// ListPeserta godoc
+// @Summary      List Session Participants (session_peserta)
+// @Description  Get all participants enrolled in a session
+// @Tags         sessions
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id   path string true "Session UUID"
+// @Success      200  {object}  map[string]interface{}
+// @Router       /api/v1/sessions/{id}/peserta [get]
+func (h *SessionHandler) ListPeserta(c *gin.Context) {
+	sessionID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "INVALID_ID", "Invalid session UUID", nil)
+		return
+	}
+
+	list, err := h.sessionUsecase.ListPeserta(c.Request.Context(), sessionID)
+	if err != nil {
+		response.HandleDomainError(c, err)
+		return
+	}
+
+	response.JSON(c, http.StatusOK, "Peserta retrieved successfully", list)
+}
+
+// AddPeserta godoc
+// @Summary      Add Participant to Session (session_peserta)
+// @Description  Enrolls an employee into a group session
+// @Tags         sessions
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id       path string                     true "Session UUID"
+// @Param        request  body sessiondomain.PesertaInput true "Peserta Payload"
+// @Success      201  {object}  map[string]interface{}
+// @Router       /api/v1/sessions/{id}/peserta [post]
+func (h *SessionHandler) AddPeserta(c *gin.Context) {
+	sessionID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "INVALID_ID", "Invalid session UUID", nil)
+		return
+	}
+
+	var input sessiondomain.PesertaInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		response.Error(c, http.StatusBadRequest, "INVALID_BODY", "Invalid JSON payload provided", nil)
+		return
+	}
+
+	if valErrors := h.validator.ValidateStruct(input); len(valErrors) > 0 {
+		response.Error(c, http.StatusUnprocessableEntity, "VALIDATION_FAILED", "Validation failed for request fields", valErrors)
+		return
+	}
+
+	peserta, err := h.sessionUsecase.AddPeserta(c.Request.Context(), sessionID, input)
+	if err != nil {
+		response.HandleDomainError(c, err)
+		return
+	}
+
+	response.JSON(c, http.StatusCreated, "Peserta added successfully", peserta)
+}
+
+// ListPertemuan godoc
+// @Summary      List Session Meetings (session_pertemuan)
+// @Description  Get list of all meetings/agenda in a session
+// @Tags         sessions
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id   path string true "Session UUID"
+// @Success      200  {object}  map[string]interface{}
+// @Router       /api/v1/sessions/{id}/pertemuan [get]
+func (h *SessionHandler) ListPertemuan(c *gin.Context) {
+	sessionID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "INVALID_ID", "Invalid session UUID", nil)
+		return
+	}
+
+	list, err := h.sessionUsecase.ListPertemuan(c.Request.Context(), sessionID)
+	if err != nil {
+		response.HandleDomainError(c, err)
+		return
+	}
+
+	response.JSON(c, http.StatusOK, "Pertemuan retrieved successfully", list)
+}
+
+// SaveCatatanPertemuan godoc
+// @Summary      Save Meeting Notes per Participant (session_pertemuan_peserta_catatan)
+// @Description  Record participant discussion notes, reflections, action plans, and claim JP
+// @Tags         sessions
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id       path string                                     true "Session UUID"
+// @Param        request  body sessiondomain.CatatPertemuanPesertaInput    true "Catatan Payload"
+// @Success      200  {object}  map[string]interface{}
+// @Router       /api/v1/sessions/{id}/catatan [post]
+func (h *SessionHandler) SaveCatatanPertemuan(c *gin.Context) {
+	sessionID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "INVALID_ID", "Invalid session UUID", nil)
+		return
+	}
+
+	var input sessiondomain.CatatPertemuanPesertaInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		response.Error(c, http.StatusBadRequest, "INVALID_BODY", "Invalid JSON payload provided", nil)
+		return
+	}
+
+	// Auto-fill NIP and Nama from token context if not passed or empty
+	if strings.TrimSpace(input.NIP) == "" {
+		if nipVal, exists := c.Get("UserNIP"); exists {
+			input.NIP = nipVal.(string)
+		}
+	}
+
+	if valErrors := h.validator.ValidateStruct(input); len(valErrors) > 0 {
+		response.Error(c, http.StatusUnprocessableEntity, "VALIDATION_FAILED", "Validation failed for request fields", valErrors)
+		return
+	}
+
+	catatan, err := h.sessionUsecase.SaveCatatanPertemuan(c.Request.Context(), sessionID, input)
+	if err != nil {
+		response.HandleDomainError(c, err)
+		return
+	}
+
+	response.JSON(c, http.StatusOK, "Catatan pertemuan berhasil disimpan", catatan)
+}
+
+// ListCatatanPertemuan godoc
+// @Summary      List Meeting Notes by Pertemuan ID
+// @Description  Get participant notes for a specific meeting
+// @Tags         sessions
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id           path string true "Session UUID"
+// @Param        pertemuanId  path string true "Pertemuan UUID"
+// @Success      200  {object}  map[string]interface{}
+// @Router       /api/v1/sessions/{id}/pertemuan/{pertemuanId}/catatan [get]
+func (h *SessionHandler) ListCatatanPertemuan(c *gin.Context) {
+	pertemuanID, err := uuid.Parse(c.Param("pertemuanId"))
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "INVALID_ID", "Invalid pertemuan UUID", nil)
+		return
+	}
+
+	list, err := h.sessionUsecase.ListCatatanPertemuan(c.Request.Context(), pertemuanID)
+	if err != nil {
+		response.HandleDomainError(c, err)
+		return
+	}
+
+	response.JSON(c, http.StatusOK, "Catatan pertemuan retrieved successfully", list)
 }

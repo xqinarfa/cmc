@@ -1,6 +1,6 @@
 "use client";
 
-import { CertificateItem, USER_RECIPIENT } from "@/lib/certificateData";
+import { CertificateItem } from "@/lib/certificateData";
 import { ASSETS } from "@/lib/assets";
 
 interface CertificateDocumentProps {
@@ -8,6 +8,15 @@ interface CertificateDocumentProps {
 }
 
 export default function CertificateDocument({ cert }: CertificateDocumentProps) {
+  const recipient = cert.recipient || {
+    name: "Aparatur Sipil Negara",
+    nip: "-",
+    rank: "Pegawai BPSDMP",
+    position: "Aparatur Sipil Negara",
+    workUnit: "Kementerian Perhubungan Republik Indonesia",
+    agency: "Badan Pengembangan SDM Perhubungan — Kementerian Perhubungan RI",
+  };
+
   return (
     <div
       id="printable-certificate"
@@ -76,13 +85,13 @@ export default function CertificateDocument({ cert }: CertificateDocumentProps) 
         </p>
 
         <h2 className="font-extrabold text-[20px] sm:text-[26px] text-[#0a2540] tracking-tight mt-1.5 font-serif">
-          {USER_RECIPIENT.name}
+          {recipient.name}
         </h2>
         <div className="text-[11px] sm:text-[12px] text-slate-600 font-mono mt-0.5">
-          NIP: {USER_RECIPIENT.nip} · {USER_RECIPIENT.rank}
+          NIP: {recipient.nip}{recipient.rank ? ` · ${recipient.rank}` : ""}
         </div>
         <div className="text-[10.5px] sm:text-[11.5px] text-slate-500 mt-0.5 max-w-md">
-          {USER_RECIPIENT.position} — {USER_RECIPIENT.workUnit}
+          {recipient.position}{recipient.workUnit ? ` — ${recipient.workUnit}` : ""}
         </div>
 
         <p className="text-[11.5px] sm:text-[13px] text-slate-700 leading-relaxed max-w-xl mt-5 px-4 font-normal">

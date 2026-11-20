@@ -2,9 +2,22 @@
 
 import { motion, LayoutGroup } from "framer-motion";
 
-export type CategoryFilter = "semua" | "kumulatif" | "coaching" | "mentoring";
+export type CategoryFilter =
+  | "semua"
+  | "kumulatif"
+  | "coaching"
+  | "mentoring"
+  | "konseling";
 export type SortOption = "terbaru" | "terlama" | "jp_tertinggi";
 export type ViewMode = "grid" | "list";
+
+export interface CategoryCounts {
+  semua?: number;
+  kumulatif?: number;
+  coaching?: number;
+  mentoring?: number;
+  konseling?: number;
+}
 
 interface SertifikatFilterBarProps {
   activeCategory: CategoryFilter;
@@ -16,6 +29,7 @@ interface SertifikatFilterBarProps {
   viewMode: ViewMode;
   onViewModeChange: (mode: ViewMode) => void;
   totalCount: number;
+  categoryCounts?: CategoryCounts;
 }
 
 export default function SertifikatFilterBar({
@@ -28,13 +42,33 @@ export default function SertifikatFilterBar({
   viewMode,
   onViewModeChange,
   totalCount,
+  categoryCounts,
 }: SertifikatFilterBarProps) {
-  const tabs = [
-    { id: "semua" as const, label: `Semua (${totalCount})` },
-    { id: "kumulatif" as const, label: "Program Terpadu (1)" },
-    { id: "coaching" as const, label: "Coaching (3)" },
-    { id: "mentoring" as const, label: "Mentoring (2)" },
+  const tabs: { id: CategoryFilter; label: string }[] = [
+    {
+      id: "semua",
+      label: `Semua (${categoryCounts?.semua ?? totalCount})`,
+    },
+    {
+      id: "kumulatif",
+      label: `Program Terpadu (${categoryCounts?.kumulatif ?? 0})`,
+    },
+    {
+      id: "coaching",
+      label: `Coaching (${categoryCounts?.coaching ?? 0})`,
+    },
+    {
+      id: "mentoring",
+      label: `Mentoring (${categoryCounts?.mentoring ?? 0})`,
+    },
   ];
+
+  if (categoryCounts && (categoryCounts.konseling ?? 0) > 0) {
+    tabs.push({
+      id: "konseling",
+      label: `Konseling (${categoryCounts.konseling})`,
+    });
+  }
 
   return (
     <div className="bg-white border border-[#e2e6eb] rounded-[14px] p-4 shadow-2xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">

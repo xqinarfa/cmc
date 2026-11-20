@@ -57,10 +57,54 @@ func Auth(jwtService authdomain.JWTService, blacklistRepo authdomain.TokenBlackl
 	}
 }
 
+// OptionalAuth parses JWT if provided, but does not abort if missing or invalid.
+func OptionalAuth(jwtService authdomain.JWTService, blacklistRepo authdomain.TokenBlacklistRepository) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		authHeader := c.GetHeader("Authorization")
+		if authHeader == "" {
+			c.Next()
+			return
+		}
+
+		parts := strings.SplitN(authHeader, " ", 2)
+		if len(parts) != 2 || !strings.EqualFold(parts[0], "Bearer") {
+			c.Next()
+			return
+		}
+
+		tokenString := parts[1]
+		if jwtService == nil {
+			c.Next()
+			return
+		}
+
+		claims, err := jwtService.ValidateToken(tokenString)
+		if err != nil {
+			c.Next()
+			return
+		}
+
+		if blacklistRepo != nil && claims.ID != "" {
+			isBlacklisted, err := blacklistRepo.IsTokenBlacklisted(c.Request.Context(), claims.ID)
+			if err == nil && isBlacklisted {
+				c.Next()
+				return
+			}
+		}
+
+		c.Set(ContextKeyClaims, claims)
+		c.Set(ContextKeyUserID, claims.UserID)
+		c.Set(ContextKeyRole, claims.Role)
+
+		c.Next()
+	}
+}
+
 func RequireRoles(allowedRoles ...userdomain.Role) gin.HandlerFunc {
-	roleMap := make(map[userdomain.Role]bool, len(allowedRoles))
+	roleMap := make(map[userdomain.Role]bool, len(allowedRoles)*2)
 	for _, r := range allowedRoles {
 		roleMap[r] = true
+		roleMap[r.Normalize()] = true
 	}
 
 	return func(c *gin.Context) {
@@ -72,7 +116,14 @@ func RequireRoles(allowedRoles ...userdomain.Role) gin.HandlerFunc {
 		}
 
 		userRole, ok := roleVal.(userdomain.Role)
-		if !ok || !roleMap[userRole] {
+		if !ok {
+			if strVal, isStr := roleVal.(string); isStr {
+				userRole = userdomain.Role(strVal)
+				ok = true
+			}
+		}
+
+		if !ok || (!roleMap[userRole] && !roleMap[userRole.Normalize()]) {
 			response.Error(c, http.StatusForbidden, "FORBIDDEN", "You do not have the required role to access this resource", nil)
 			c.Abort()
 			return

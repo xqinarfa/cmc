@@ -7,6 +7,7 @@ import {
   INITIAL_DASHBOARD_SESSIONS,
   INITIAL_COACHES,
 } from "@/lib/dashboardData";
+import { fetchSessions, ApiSession } from "@/lib/api";
 import {
   DashboardAnnouncement,
   DashboardHero,
@@ -24,7 +25,9 @@ import {
 
 export default function DashboardPage() {
   // Filter & Search states
-  const [sessionFilter, setSessionFilter] = useState<"all" | "coaching" | "mentoring">("all");
+  const [sessionFilter, setSessionFilter] = useState<
+    "all" | "coaching" | "mentoring" | "konseling"
+  >("all");
   const [sessionSearch, setSessionSearch] = useState("");
 
   // Dismissible announcement
@@ -43,16 +46,85 @@ export default function DashboardPage() {
   const [copiedToken, setCopiedToken] = useState(false);
 
   // Toast feedback state
-  const [toast, setToast] = useState<{ title: string; desc: string; type: "success" | "info" } | null>(null);
+  const [toast, setToast] = useState<{
+    title: string;
+    desc: string;
+    type: "success" | "info";
+  } | null>(null);
 
   // Active Pairing Token
-  const pairingToken = "CMC-4821-7X9A";
+  const [pairingToken, setPairingToken] = useState("CMC-4821-7X9A");
 
   // Data states
-  const [sessions, setSessions] = useState<SessionItem[]>(INITIAL_DASHBOARD_SESSIONS);
+  const [sessions, setSessions] = useState<SessionItem[]>(
+    INITIAL_DASHBOARD_SESSIONS,
+  );
+  const [apiSessions, setApiSessions] = useState<ApiSession[]>([]);
+
+  // Fetch real sessions from database
+  useEffect(() => {
+    let isMounted = true;
+    async function loadRealSessions() {
+      try {
+        const data = await fetchSessions();
+        if (isMounted && data && Array.isArray(data)) {
+          setApiSessions(data);
+          const mapped: SessionItem[] = data.map((s) => ({
+            id: s.id,
+            type:
+              s.type === "mentoring"
+                ? "mentoring"
+                : s.type === "counseling" || s.type === "konseling"
+                ? "konseling"
+                : "coaching",
+            title: s.title || s.topic || `Sesi ${s.type}`,
+            mentor: s.practitioner?.full_name || "Belum ditentukan",
+            status:
+              s.status === "completed"
+                ? "completed"
+                : s.status === "pending"
+                ? "pending"
+                : "active",
+            jpCurrent: s.current_jp || 0,
+            jpTotal: s.target_jp || 6,
+            date: s.created_at
+              ? new Date(s.created_at).toLocaleDateString("id-ID", {
+                  day: "numeric",
+                  month: "short",
+                  year: "numeric",
+                })
+              : "2026",
+            location: s.session_format || "Ruang Virtual BPSDM",
+          }));
+          setSessions(mapped);
+          const pendingWithToken = data.find((s) => s.token);
+          if (pendingWithToken?.token) {
+            setPairingToken(pendingWithToken.token);
+          }
+        }
+      } catch (err) {
+        // Silently fail if unauthenticated/server issue
+      }
+    }
+    loadRealSessions();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const handleOpenTokenModal = (token?: string) => {
+    if (token) {
+      setPairingToken(token);
+    }
+    setShowTokenModal(true);
+  };
 
   // Trigger toast helper
-  const triggerToast = (title: string, desc: string, type: "success" | "info" = "success") => {
+  const triggerToast = (
+    title: string,
+    desc: string,
+    type: "success" | "info" = "success",
+  ) => {
     setToast({ title, desc, type });
     setTimeout(() => setToast(null), 3500);
   };
@@ -61,7 +133,10 @@ export default function DashboardPage() {
   const handleCopyToken = () => {
     navigator.clipboard.writeText(pairingToken);
     setCopiedToken(true);
-    triggerToast("Token Berhasil Disalin", `Kode ${pairingToken} siap dibagikan kepada Mentor/Coach.`);
+    triggerToast(
+      "Token Berhasil Disalin",
+      `Kode ${pairingToken} siap dibagikan kepada Mentor/Coach.`,
+    );
     setTimeout(() => setCopiedToken(false), 2000);
   };
 
@@ -96,7 +171,11 @@ export default function DashboardPage() {
           setShowJpBreakdown(true);
         }
       } else if (hash === "#pengaturan") {
-        triggerToast("Pengaturan Akun", "Fitur preferensi profil dan notifikasi terhubung dengan data SSO SIK Kemenhub.", "info");
+        triggerToast(
+          "Pengaturan Akun",
+          "Fitur preferensi profil dan notifikasi terhubung dengan data SSO SIK Kemenhub.",
+          "info",
+        );
       }
     };
 
@@ -120,7 +199,11 @@ export default function DashboardPage() {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const title = formData.get("topic") as string;
-    const type = (formData.get("type") as string).toLowerCase().includes("coaching") ? "coaching" : "mentoring";
+    const type = (formData.get("type") as string)
+      .toLowerCase()
+      .includes("coaching")
+      ? "coaching"
+      : "mentoring";
     const jp = Number(formData.get("jp") || 2);
 
     const newSession: SessionItem = {
@@ -137,13 +220,19 @@ export default function DashboardPage() {
 
     setSessions([newSession, ...sessions]);
     setShowNewSessionModal(false);
-    triggerToast("Sesi Berhasil Didaftarkan", `${newSession.title} (${jp} JP) berhasil ditambahkan.`);
+    triggerToast(
+      "Sesi Berhasil Didaftarkan",
+      `${newSession.title} (${jp} JP) berhasil ditambahkan.`,
+    );
   };
 
   const handleSaveAction = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setShowActionModal(false);
-    triggerToast("Catatan Tersimpan", "Komitmen aksi berhasil divalidasi dan dicatat di SIASN.");
+    triggerToast(
+      "Catatan Tersimpan",
+      "Komitmen aksi berhasil divalidasi dan dicatat di SIASN.",
+    );
   };
 
   return (
@@ -165,12 +254,13 @@ export default function DashboardPage() {
       <DashboardHero />
 
       {/* 4. MAIN CONTENT CONTAINER */}
-      <main className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 -mt-10 relative z-20 pb-16 flex-1 w-full flex flex-col gap-5">
+      <main className="full mx-auto px-4 sm:px-8 lg:px-16 xl:px-24 -mt-10 relative z-20 pb-16 flex-1 w-full flex flex-col gap-5">
         {/* EXECUTIVE CAPAIAN JP CARD (Target Anchor: #pengembangan) */}
         <div id="pengembangan" className="scroll-mt-24 w-full">
           <DashboardExecutiveJpCard
             showJpBreakdown={showJpBreakdown}
             onToggleJpBreakdown={() => setShowJpBreakdown(!showJpBreakdown)}
+            sessions={apiSessions.length > 0 ? apiSessions : sessions}
           />
         </div>
 
@@ -184,16 +274,18 @@ export default function DashboardPage() {
             copiedToken={copiedToken}
             pairingToken={pairingToken}
             onOpenCoachFinderModal={() => setShowCoachFinderModal(true)}
+            sessions={apiSessions.length > 0 ? apiSessions : sessions}
           />
 
           {/* RIGHT COLUMN */}
           <DashboardRightColumn
             filteredSessions={filteredSessions}
+            sessions={apiSessions.length > 0 ? apiSessions : sessions}
             sessionFilter={sessionFilter}
             setSessionFilter={setSessionFilter}
             sessionSearch={sessionSearch}
             setSessionSearch={setSessionSearch}
-            onOpenTokenModal={() => setShowTokenModal(true)}
+            onOpenTokenModal={handleOpenTokenModal}
             onOpenActionModal={() => setShowActionModal(true)}
             onOpenCoachFinderModal={() => setShowCoachFinderModal(true)}
           />
@@ -241,16 +333,16 @@ export default function DashboardPage() {
         isOpen={showCertModal}
         onClose={() => setShowCertModal(false)}
         onDownload={() => {
-          triggerToast("Sertifikat Diunduh", "Berkas Sertifikat_CMC_Andi_Pratama.pdf berhasil disimpan.");
+          triggerToast(
+            "Sertifikat Diunduh",
+            "Berkas Sertifikat_CMC_Andi_Pratama.pdf berhasil disimpan.",
+          );
           setShowCertModal(false);
         }}
       />
 
       {/* 7. TOAST NOTIFICATION */}
-      <DashboardToast
-        toast={toast}
-        onClose={() => setToast(null)}
-      />
+      <DashboardToast toast={toast} onClose={() => setToast(null)} />
     </div>
   );
 }

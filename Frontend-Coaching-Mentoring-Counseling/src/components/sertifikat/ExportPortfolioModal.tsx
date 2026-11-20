@@ -1,20 +1,28 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { USER_RECIPIENT } from "@/lib/certificateData";
 
 interface ExportPortfolioModalProps {
   isOpen: boolean;
   onClose: () => void;
   onDownload: () => void;
+  recipientName?: string;
+  totalCertificates?: number;
+  totalJp?: number;
 }
 
 export default function ExportPortfolioModal({
   isOpen,
   onClose,
   onDownload,
+  recipientName = "Pegawai Kementerian Perhubungan",
+  totalCertificates = 0,
+  totalJp = 0,
 }: ExportPortfolioModalProps) {
   if (!isOpen) return null;
+
+  const currentYear = new Date().getFullYear();
+  const sessionCertCount = Math.max(0, totalCertificates - 1);
 
   return (
     <motion.div
@@ -50,8 +58,7 @@ export default function ExportPortfolioModal({
 
         <p className="text-xs text-slate-600 leading-relaxed">
           Anda akan mengunduh seluruh dokumen kredensial digital resmi atas nama{" "}
-          <strong>{USER_RECIPIENT.name}</strong>, mencakup 1 Sertifikat Siklus
-          Kumulatif, 5 Sertifikat Sesi, serta Buku Transkrip Capaian 14 JP.
+          <strong>{recipientName}</strong>, mencakup {totalCertificates} dokumen sertifikat serta buku transkrip capaian {totalJp} JP.
         </p>
 
         <div className="space-y-2">
@@ -61,7 +68,7 @@ export default function ExportPortfolioModal({
               defaultChecked
               className="rounded text-blue-600 focus:ring-blue-500"
             />
-            <span>Sertifikat Siklus Pembelajaran Terpadu 2024 (PDF)</span>
+            <span>Sertifikat Siklus Pembelajaran Terpadu {currentYear} (PDF)</span>
           </label>
           <label className="flex items-center gap-2 text-xs text-slate-700 cursor-pointer">
             <input
@@ -69,7 +76,7 @@ export default function ExportPortfolioModal({
               defaultChecked
               className="rounded text-blue-600 focus:ring-blue-500"
             />
-            <span>5 Berkas Sertifikat Sesi Coaching &amp; Mentoring (PDF)</span>
+            <span>{sessionCertCount > 0 ? `${sessionCertCount} Berkas Sertifikat Sesi Pengembangan (PDF)` : "Berkas Sertifikat Sesi (PDF)"}</span>
           </label>
           <label className="flex items-center gap-2 text-xs text-slate-700 cursor-pointer">
             <input
@@ -77,7 +84,7 @@ export default function ExportPortfolioModal({
               defaultChecked
               className="rounded text-blue-600 focus:ring-blue-500"
             />
-            <span>Transkrip Resmi Rekapitulasi Capaian JP SIASN (PDF)</span>
+            <span>Transkrip Resmi Rekapitulasi Capaian {totalJp} JP SIASN (PDF)</span>
           </label>
         </div>
 

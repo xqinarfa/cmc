@@ -5,4 +5,6 @@ export { default as Step2Pendamping } from "./Step2Pendamping";
 export { default as Step3Konfirmasi } from "./Step3Konfirmasi";
 export { default as SesiBaruSidebar } from "./SesiBaruSidebar";
 export { default as CoachSelectionModal } from "./CoachSelectionModal";
+export { default as AssignPegawaiModal } from "./AssignPegawaiModal";
+export { default as PejabatPenilaiModal } from "./PejabatPenilaiModal";
 export { default as TokenSuccessModal } from "./TokenSuccessModal";

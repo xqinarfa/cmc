@@ -7,11 +7,19 @@ interface SesiDetailSidebarProps {
   onCopyToken: () => void;
   onResendNotification: () => void;
   onCancelSession: () => void;
+  onApproveSession?: () => void;
+  onRejectSession?: () => void;
+  isPending?: boolean;
   token?: string;
   practitionerName?: string;
   practitionerRole?: string;
   practitionerInitials?: string;
+  clientName?: string;
+  clientNip?: string;
+  clientJabatan?: string;
+  sessionFormat?: string;
   verifikatorName?: string;
+  verifikatorJabatan?: string;
 }
 
 export function SesiDetailSidebar({
@@ -19,12 +27,37 @@ export function SesiDetailSidebar({
   onCopyToken,
   onResendNotification,
   onCancelSession,
+  onApproveSession,
+  onRejectSession,
+  isPending = false,
   token = "CMC-4821-7X9A",
   practitionerName = "Rudi Santoso, M.M.",
   practitionerRole = "Coach",
   practitionerInitials = "RS",
+  clientName,
+  clientNip,
+  clientJabatan,
+  sessionFormat,
   verifikatorName = "Dr. Budi Hartono, M.Si.",
+  verifikatorJabatan,
 }: SesiDetailSidebarProps) {
+  const verifikatorInitials = verifikatorName
+    ? verifikatorName
+        .split(" ")
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((w) => w[0].toUpperCase())
+        .join("")
+    : "AT";
+
+  const clientInitials = clientName
+    ? clientName
+        .split(" ")
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((w) => w[0].toUpperCase())
+        .join("")
+    : "PS";
   return (
     <aside className="w-full lg:w-[320px] shrink-0 flex flex-col gap-4">
       {/* CARD 1: INFORMASI SESI */}
@@ -69,6 +102,26 @@ export function SesiDetailSidebar({
           </div>
         </div>
 
+        {/* Peserta (Client) Profile */}
+        {clientName && (
+          <div className="flex items-start gap-3">
+            <div className="size-8 rounded-full flex items-center justify-center text-white font-bold text-[11px] shrink-0 bg-[#0a2540]">
+              {clientInitials}
+            </div>
+            <div className="flex flex-col gap-0.5 min-w-0">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.3px] text-[#64748b]">
+                {sessionFormat === "1-on-group" ? "Peserta Pelapor (Kelompok)" : "Peserta / Coachee"}
+              </span>
+              <span className="text-[13px] font-medium text-[#0f172a] truncate">
+                {clientName}
+              </span>
+              <span className="text-[11.5px] text-[#64748b] line-clamp-1">
+                {clientNip ? `NIP. ${clientNip}` : clientJabatan || "Pegawai Kemenhub"}
+              </span>
+            </div>
+          </div>
+        )}
+
         {/* Verifikator Profile */}
         <div className="flex items-start gap-3">
           <div
@@ -77,7 +130,7 @@ export function SesiDetailSidebar({
               background: "linear-gradient(135deg, rgb(148, 163, 184) 0%, rgb(71, 85, 105) 100%)",
             }}
           >
-            BH
+            {verifikatorInitials}
           </div>
           <div className="flex flex-col gap-0.5 min-w-0">
             <span className="text-[11px] font-semibold uppercase tracking-[0.3px] text-[#64748b]">
@@ -86,8 +139,8 @@ export function SesiDetailSidebar({
             <span className="text-[13px] font-medium text-[#0f172a] truncate">
               {verifikatorName}
             </span>
-            <span className="text-[11.5px] text-[#64748b]">
-              Kepala Bagian · Sekretariat BKT
+            <span className="text-[11.5px] text-[#64748b] line-clamp-2">
+              {verifikatorJabatan || "Atasan Langsung / Pejabat Penilai"}
             </span>
           </div>
         </div>
@@ -158,6 +211,55 @@ export function SesiDetailSidebar({
         </div>
 
         <div className="flex flex-col gap-2 pt-1">
+          {/* Info Status Menunggu Verifikasi untuk Pegawai Biasa */}
+          {isPending && !onApproveSession && (
+            <div className="p-3 bg-amber-50/80 border border-amber-200/90 rounded-[8px] flex items-start gap-2.5 mb-1">
+              <svg className="size-4 text-amber-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <div className="flex flex-col gap-0.5">
+                <span className="text-[12px] font-semibold text-amber-900">Menunggu Verifikasi</span>
+                <span className="text-[11.5px] text-amber-700 leading-snug">
+                  Sesi menunggu verifikasi dan persetujuan dari Atasan Langsung ({verifikatorName}).
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Tombol Verifikasi Khusus Atasan / Verifikator saat Sesi Menunggu Konfirmasi */}
+          {isPending && onApproveSession && (
+            <button
+              type="button"
+              onClick={onApproveSession}
+              className="h-[36px] px-3 rounded-[8px] bg-[#067647] hover:bg-[#05603a] text-white font-semibold text-[12.5px] inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+            >
+              <svg
+                className="size-4 text-white"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth="2.5"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+              <span>Verifikasi & Setujui Sesi</span>
+            </button>
+          )}
+
+          {isPending && onRejectSession && (
+            <button
+              type="button"
+              onClick={onRejectSession}
+              className="h-[32px] px-3 rounded-[8px] bg-red-50 hover:bg-red-100 border border-red-200 text-[#b42318] font-medium text-[12.5px] inline-flex items-center justify-center transition-colors cursor-pointer"
+            >
+              Kembalikan untuk Perbaikan
+            </button>
+          )}
+
           {token && (
             <button
               type="button"

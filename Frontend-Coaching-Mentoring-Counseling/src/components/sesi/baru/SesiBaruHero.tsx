@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 export default function SesiBaruHero() {
   return (
     <section
-      className="relative w-full overflow-hidden pt-6 pb-20 px-4 sm:px-6 lg:px-8 text-white shadow-[0px_12px_28px_0px_rgba(15,23,42,0.08)]"
+      className="relative w-full overflow-hidden pt-6 pb-20 text-white shadow-[0px_12px_28px_0px_rgba(15,23,42,0.08)]"
       style={{
         backgroundImage:
           "linear-gradient(134.65deg, rgb(10, 34, 68) 0%, rgb(13, 44, 84) 45%, rgb(11, 58, 107) 100%)",
@@ -45,7 +45,7 @@ export default function SesiBaruHero() {
         />
       </div>
 
-      <div className="max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10 flex flex-col gap-3">
+      <div className="full mx-auto px-4 sm:px-8 lg:px-16 xl:px-24 relative z-10 flex flex-col gap-3">
         {/* Breadcrumb (Figma Node 832:44) */}
         <motion.nav
           initial={{ opacity: 0, y: -6 }}
@@ -53,11 +53,17 @@ export default function SesiBaruHero() {
           transition={{ duration: 0.3 }}
           className="flex items-center gap-2 text-[12.5px] leading-[18.75px]"
         >
-          <Link href="/dashboard" className="text-white/70 hover:text-white transition-colors">
+          <Link
+            href="/dashboard"
+            className="text-white/70 hover:text-white transition-colors"
+          >
             Beranda
           </Link>
           <span className="text-white/40">/</span>
-          <Link href="/sesi" className="text-white/70 hover:text-white transition-colors">
+          <Link
+            href="/sesi"
+            className="text-white/70 hover:text-white transition-colors"
+          >
             Sesi
           </Link>
           <span className="text-white/40">/</span>
@@ -75,7 +81,8 @@ export default function SesiBaruHero() {
             Catat Sesi Baru
           </h1>
           <p className="text-[13.5px] text-white/85 leading-[20.25px]">
-            Isi data sesi Coaching atau Mentoring yang akan atau sudah Anda laksanakan.
+            Isi data sesi Coaching atau Mentoring yang akan atau sudah Anda
+            laksanakan.
           </p>
         </motion.div>
       </div>

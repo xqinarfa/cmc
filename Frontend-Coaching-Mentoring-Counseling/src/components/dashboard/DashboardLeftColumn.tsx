@@ -1,8 +1,10 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { JpProgressSummary, calculateJpSummary } from "@/lib/jpCalculations";
+import { fetchSessions } from "@/lib/api";
 
 interface DashboardLeftColumnProps {
   onOpenBreakdownModal: () => void;
@@ -11,6 +13,8 @@ interface DashboardLeftColumnProps {
   copiedToken: boolean;
   pairingToken: string;
   onOpenCoachFinderModal: () => void;
+  sessions?: any[];
+  jpSummary?: JpProgressSummary;
 }
 
 export function DashboardLeftColumn({
@@ -20,12 +24,70 @@ export function DashboardLeftColumn({
   copiedToken,
   pairingToken,
   onOpenCoachFinderModal,
+  sessions: initialSessions,
+  jpSummary: initialSummary,
 }: DashboardLeftColumnProps) {
   const router = useRouter();
+  const [loadedSessions, setLoadedSessions] = useState<any[]>(initialSessions || []);
+
+  useEffect(() => {
+    if (initialSessions && initialSessions.length > 0) {
+      setLoadedSessions(initialSessions);
+      return;
+    }
+
+    let isMounted = true;
+    async function loadData() {
+      try {
+        const data = await fetchSessions();
+        if (isMounted && data && Array.isArray(data)) {
+          setLoadedSessions(data);
+        }
+      } catch {}
+    }
+    loadData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [initialSessions]);
+
+  const summary = initialSummary || calculateJpSummary(loadedSessions);
+
+  // Find active pending session with token from real sessions
+  const pendingSessionWithToken = loadedSessions.find(
+    (s: any) =>
+      s.token &&
+      (s.status === "pending" ||
+        s.status === "menunggu_konfirmasi" ||
+        s.status === "dikembalikan" ||
+        s.status === "active" ||
+        s.status === "berlangsung"),
+  );
+
+  const displayToken =
+    pendingSessionWithToken?.token || pairingToken || "CMC-4821-7X9A";
+
+  const sessionTypeLabel =
+    pendingSessionWithToken?.type === "mentoring" ||
+    pendingSessionWithToken?.category === "Mentoring"
+      ? "Mentoring"
+      : pendingSessionWithToken?.type === "counseling" ||
+        pendingSessionWithToken?.category === "Counseling"
+      ? "Konseling"
+      : "Coaching";
+
+  const mentorName =
+    pendingSessionWithToken?.mentor ||
+    pendingSessionWithToken?.mentorOrCoachName ||
+    pendingSessionWithToken?.practitioner?.full_name ||
+    "Coach/Mentor";
+
+  const hasPending = Boolean(pendingSessionWithToken);
 
   return (
     <div className="flex flex-col gap-5">
-      {/* 1. Donut Progress Card */}
+      {/* 1. Donut Progress Card with Real JP Data */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
@@ -41,7 +103,7 @@ export function DashboardLeftColumn({
           <div
             className="relative size-20 shrink-0"
             role="img"
-            aria-label="Progres Pembelajaran: 14 dari 20 JP (70 persen)"
+            aria-label={`Progres Pembelajaran: ${summary.totalJp} dari ${summary.targetJp} JP (${summary.percentage} persen)`}
           >
             <svg className="size-full -rotate-90" viewBox="0 0 80 80">
               <circle
@@ -61,7 +123,9 @@ export function DashboardLeftColumn({
                 strokeWidth="7"
                 strokeDasharray={201}
                 initial={{ strokeDashoffset: 201 }}
-                animate={{ strokeDashoffset: 201 * (1 - 0.7) }}
+                animate={{
+                  strokeDashoffset: 201 * (1 - summary.percentage / 100),
+                }}
                 transition={{ duration: 1.2, delay: 0.25, ease: "easeOut" }}
                 strokeLinecap="round"
                 stroke="currentColor"
@@ -69,13 +133,17 @@ export function DashboardLeftColumn({
               />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="font-extrabold text-[17px] text-white leading-none tabular-nums">70%</span>
-              <span className="text-[9px] text-cyan-200 mt-0.5">TERCAPAI</span>
+              <span className="font-extrabold text-[17px] text-white leading-none tabular-nums">
+                {summary.percentage}%
+              </span>
+              <span className="text-[9px] text-cyan-200 mt-0.5 font-bold tracking-wider">
+                {summary.percentage >= 100 ? "LENGKAP" : "TERCAPAI"}
+              </span>
             </div>
           </div>
 
           <span className="text-[10px] uppercase font-bold tracking-wider text-cyan-300 bg-white/10 px-2.5 py-1 rounded-md border border-white/15">
-            Target 20 JP
+            Target {summary.targetJp} JP
           </span>
         </div>
 
@@ -84,7 +152,25 @@ export function DashboardLeftColumn({
             Progres Pengembangan Pegawai
           </h3>
           <p className="text-[12.5px] text-white/80 leading-relaxed">
-            Tambahkan <strong className="text-cyan-300 font-semibold">6 JP</strong> lagi sebelum akhir periode untuk mempertahankan indeks kompetensi predikat <em>Sangat Baik</em>.
+            {summary.sisaJp > 0 ? (
+              <>
+                Tambahkan{" "}
+                <strong className="text-cyan-300 font-semibold">
+                  {summary.sisaJp} JP
+                </strong>{" "}
+                lagi sebelum akhir periode untuk mempertahankan indeks kompetensi
+                predikat <em>Sangat Baik</em>.
+              </>
+            ) : (
+              <>
+                Target tahunan{" "}
+                <strong className="text-cyan-300 font-semibold">
+                  {summary.targetJp} JP
+                </strong>{" "}
+                telah terpenuhi! Indeks kompetensi pegawai mencapai predikat{" "}
+                <em>Sangat Baik</em>.
+              </>
+            )}
           </p>
         </div>
 
@@ -94,16 +180,22 @@ export function DashboardLeftColumn({
           onClick={onOpenBreakdownModal}
           className="inline-flex items-center gap-2 text-[12.5px] font-bold text-white hover:text-cyan-200 transition-colors pt-3 cursor-pointer group focus-visible:ring-2 focus-visible:ring-cyan-300 outline-none w-fit"
         >
-          <span>Lihat rincian per kategori</span>
+          <span>Lihat rincian per kategori ({summary.totalJp}/{summary.targetJp} JP)</span>
           <div className="size-5 rounded-full bg-white/15 group-hover:bg-white/25 flex items-center justify-center border border-white/20 transition-all">
-            <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+            <svg
+              className="w-2.5 h-2.5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth="2.5"
+            >
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
             </svg>
           </div>
         </motion.button>
       </motion.div>
 
-      {/* 2. Token Pairing Card */}
+      {/* 2. Token Pairing Card with Real Session Token */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
@@ -113,26 +205,59 @@ export function DashboardLeftColumn({
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span
+              className={`size-2 rounded-full ${
+                hasPending ? "bg-emerald-500 animate-pulse" : "bg-blue-500"
+              }`}
+            />
             <h4 className="font-bold text-[#0a2244] text-[13.5px]">
-              Token Pairing Aktif
+              {hasPending ? "Token Pairing Aktif" : "Token Pairing"}
             </h4>
           </div>
-          <span className="bg-amber-50 text-amber-700 text-[10.5px] font-bold px-2 py-0.5 rounded-full border border-amber-200">
-            1 Menunggu
+          <span
+            className={`text-[10.5px] font-bold px-2 py-0.5 rounded-full border ${
+              hasPending
+                ? "bg-amber-50 text-amber-700 border-amber-200"
+                : "bg-slate-100 text-slate-600 border-slate-200"
+            }`}
+          >
+            {hasPending
+              ? summary.countPerluTindakan > 0
+                ? `${summary.countPerluTindakan} Menunggu`
+                : "1 Aktif"
+              : "Siap Digunakan"}
           </span>
         </div>
 
         <p className="text-[12.5px] text-slate-600 leading-snug">
-          Sesi <strong className="font-semibold text-slate-900">Mentoring</strong> menunggu konfirmasi token dari mentor <strong className="font-semibold text-slate-900">Dr. Sari Wulandari</strong>.
+          {hasPending ? (
+            <>
+              Sesi{" "}
+              <strong className="font-semibold text-slate-900">
+                {sessionTypeLabel}
+              </strong>{" "}
+              menunggu konfirmasi token dari{" "}
+              {sessionTypeLabel.toLowerCase() === "mentoring" ? "mentor" : "coach"}{" "}
+              <strong className="font-semibold text-slate-900">
+                {mentorName}
+              </strong>
+              .
+            </>
+          ) : (
+            <>
+              Token pairing digunakan untuk mencatatkan dan memvalidasi sesi Coaching atau Mentoring ke pangkalan data SIASN.
+            </>
+          )}
         </p>
 
         {/* Dashed Monospace Token Box */}
         <div className="bg-slate-50 border border-slate-200 border-dashed rounded-lg py-2.5 px-3 flex items-center justify-between">
           <span className="font-mono font-bold text-[#0a2244] text-[14px] tracking-[1.5px] tabular-nums">
-            {pairingToken}
+            {displayToken}
           </span>
-          <span className="text-[10px] text-slate-400 font-medium">Aktif 24 jam</span>
+          <span className="text-[10px] text-slate-400 font-medium">
+            {hasPending ? "Aktif" : "Kode Sesi"}
+          </span>
         </div>
 
         {/* Actions */}
@@ -141,12 +266,32 @@ export function DashboardLeftColumn({
             type="button"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.97 }}
-            onClick={onOpenTokenModal}
+            onClick={() => {
+              if (pendingSessionWithToken?.id) {
+                router.push(`/sesi/detail/${pendingSessionWithToken.id}`);
+              } else {
+                onOpenTokenModal();
+              }
+            }}
             className="h-8.5 rounded-lg bg-[#0a2244] hover:bg-[#13396b] text-white font-semibold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-xs focus-visible:ring-2 focus-visible:ring-blue-600 outline-none"
           >
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            <svg
+              className="w-3.5 h-3.5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+              />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+              />
             </svg>
             <span>Lihat Detail</span>
           </motion.button>
@@ -154,18 +299,38 @@ export function DashboardLeftColumn({
             type="button"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.97 }}
-            onClick={onCopyToken}
+            onClick={() => {
+              if (
+                typeof window !== "undefined" &&
+                typeof navigator !== "undefined" &&
+                navigator.clipboard?.writeText &&
+                displayToken
+              ) {
+                navigator.clipboard.writeText(displayToken);
+              }
+              onCopyToken();
+            }}
             className="h-8.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 font-semibold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-2xs focus-visible:ring-2 focus-visible:ring-blue-600 outline-none"
           >
-            <svg className="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            <svg
+              className="w-3.5 h-3.5 text-slate-500"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+              />
             </svg>
             <span>{copiedToken ? "Tersalin!" : "Salin Kode"}</span>
           </motion.button>
         </div>
       </motion.div>
 
-      {/* 3. Program Rekomendasi */}
+      {/* 3. Program Rekomendasi BPSDM */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
@@ -190,30 +355,34 @@ export function DashboardLeftColumn({
           <motion.button
             type="button"
             whileHover={{ x: 3 }}
-            onClick={() => router.push("/sesi/baru")}
+            onClick={() => router.push("/sesi/baru?tipe=coaching")}
             className="p-2.5 rounded-lg hover:bg-slate-50 border border-slate-100 flex items-start gap-2.5 text-left transition-colors cursor-pointer group"
           >
             <span className="size-2 rounded-full bg-blue-600 mt-1.5 shrink-0 group-hover:scale-125 transition-transform" />
             <div className="flex flex-col">
               <span className="font-semibold text-slate-900 group-hover:text-blue-700 transition-colors">
-                Kepemimpinan Adaptif di Era Transformasi
+                Coaching: Kepemimpinan &amp; Transformasi Layanan
               </span>
-              <span className="text-[11px] text-slate-500 font-mono">Bobot: 4 JP · Fungsional</span>
+              <span className="text-[11px] text-slate-500 font-mono">
+                1 Pertemuan = 2 JP · Maks. 2/bulan
+              </span>
             </div>
           </motion.button>
 
           <motion.button
             type="button"
             whileHover={{ x: 3 }}
-            onClick={() => router.push("/sesi/baru")}
+            onClick={() => router.push("/sesi/baru?tipe=mentoring")}
             className="p-2.5 rounded-lg hover:bg-slate-50 border border-slate-100 flex items-start gap-2.5 text-left transition-colors cursor-pointer group"
           >
-            <span className="size-2 rounded-full bg-blue-600 mt-1.5 shrink-0 group-hover:scale-125 transition-transform" />
+            <span className="size-2 rounded-full bg-emerald-600 mt-1.5 shrink-0 group-hover:scale-125 transition-transform" />
             <div className="flex flex-col">
-              <span className="font-semibold text-slate-900 group-hover:text-blue-700 transition-colors">
-                Inovasi Layanan Transportasi Publik
+              <span className="font-semibold text-slate-900 group-hover:text-emerald-700 transition-colors">
+                Mentoring: Pengembangan Karier &amp; Talenta ASN
               </span>
-              <span className="text-[11px] text-slate-500 font-mono">Bobot: 3 JP · Teknis</span>
+              <span className="text-[11px] text-slate-500 font-mono">
+                1 Pertemuan = 2 JP · Maks. 2/bulan
+              </span>
             </div>
           </motion.button>
         </div>
@@ -225,7 +394,7 @@ export function DashboardLeftColumn({
           onClick={onOpenCoachFinderModal}
           className="w-full h-9 rounded-lg bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 font-semibold text-xs transition-colors cursor-pointer shadow-2xs focus-visible:ring-2 focus-visible:ring-blue-600 outline-none"
         >
-          Lihat Semua Program &amp; Modul →
+          Lihat Semua Mentor &amp; Coach →
         </motion.button>
       </motion.div>
     </div>

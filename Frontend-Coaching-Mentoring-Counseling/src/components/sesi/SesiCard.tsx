@@ -57,6 +57,12 @@ export default function SesiCard({
               <span>{session.category}</span>
             </div>
 
+            {session.sessionFormat === "1-on-group" && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#eef4ff] text-[#1d2939] border border-blue-100">
+                👥 Kelompok ({session.pesertaCount || "Banyak"} Peserta)
+              </span>
+            )}
+
             {/* Status Badges */}
             {session.status === "menunggu_konfirmasi" && (
               <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#fef6e7] text-[#92400e] border border-amber-200/80">

@@ -79,5 +79,36 @@ describe("AddMeetingModal Component", () => {
 
     expect(container.firstChild).toBeNull();
   });
+
+  it("shows warning and disables submit when isVerified is false", () => {
+    render(
+      <AddMeetingModal
+        isOpen={true}
+        meetingCount={0}
+        onClose={vi.fn()}
+        onSubmit={vi.fn()}
+        title="Pertemuan Baru"
+        setTitle={vi.fn()}
+        date="2026-11-20"
+        setDate={vi.fn()}
+        type="Luring"
+        setType={vi.fn()}
+        location=""
+        setLocation={vi.fn()}
+        summary=""
+        setSummary={vi.fn()}
+        isVerified={false}
+      />
+    );
+
+    expect(
+      screen.getByText(/Sesi ini masih menunggu verifikasi dari Atasan Langsung/i)
+    ).toBeInTheDocument();
+
+    const submitBtn = screen.getByRole("button", {
+      name: /Simpan Sebagai Draf/i,
+    });
+    expect(submitBtn).toBeDisabled();
+  });
 });
 

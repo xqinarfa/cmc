@@ -10,24 +10,32 @@ import (
 	authdelivery "github.com/kalanara/cmc-backend/internal/modules/auth/delivery/http"
 	authdomain "github.com/kalanara/cmc-backend/internal/modules/auth/domain"
 	healthdelivery "github.com/kalanara/cmc-backend/internal/modules/health/delivery/http"
+	satkerdelivery "github.com/kalanara/cmc-backend/internal/modules/satuan_kerja/delivery/http"
 	sessiondelivery "github.com/kalanara/cmc-backend/internal/modules/session/delivery/http"
+	sikdelivery "github.com/kalanara/cmc-backend/internal/modules/sik/delivery/http"
+	subdelivery "github.com/kalanara/cmc-backend/internal/modules/sub_unit_kerja/delivery/http"
+	unitdelivery "github.com/kalanara/cmc-backend/internal/modules/unit_kerja/delivery/http"
 	userdelivery "github.com/kalanara/cmc-backend/internal/modules/user/delivery/http"
 	userdomain "github.com/kalanara/cmc-backend/internal/modules/user/domain"
 	"github.com/kalanara/cmc-backend/internal/platform/middleware"
 
+	_ "github.com/kalanara/cmc-backend/docs"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
-	_ "github.com/kalanara/cmc-backend/docs"
 )
 
 type RouterConfig struct {
-	Config         *config.Config
-	JWTService     authdomain.JWTService
-	BlacklistRepo  authdomain.TokenBlacklistRepository
-	HealthHandler  *healthdelivery.HealthHandler
-	AuthHandler    *authdelivery.AuthHandler
-	UserHandler    *userdelivery.UserHandler
-	SessionHandler *sessiondelivery.SessionHandler
+	Config             *config.Config
+	JWTService         authdomain.JWTService
+	BlacklistRepo      authdomain.TokenBlacklistRepository
+	HealthHandler      *healthdelivery.HealthHandler
+	AuthHandler        *authdelivery.AuthHandler
+	UserHandler        *userdelivery.UserHandler
+	SessionHandler     *sessiondelivery.SessionHandler
+	SIKHandler         *sikdelivery.SIKHandler
+	SatuanKerjaHandler *satkerdelivery.SatuanKerjaHandler
+	UnitKerjaHandler   *unitdelivery.UnitKerjaHandler
+	SubUnitKerjaHandler *subdelivery.SubUnitKerjaHandler
 }
 
 func SetupRouter(cfg *RouterConfig) *gin.Engine {
@@ -109,6 +117,62 @@ func SetupRouter(cfg *RouterConfig) *gin.Engine {
 			authGroup.POST("/google", cfg.AuthHandler.LoginGoogle)
 		}
 
+		// Module SIK (Public search, lookup by NIP, sync, reset-password & referensi)
+		if cfg.SIKHandler != nil {
+			sikGroup := v1Group.Group("/sik")
+			{
+				sikGroup.GET("/pegawai/:nip", cfg.SIKHandler.GetByNIP)
+				sikGroup.GET("/pegawai/:nip/role", cfg.SIKHandler.GetRoleByNIP)
+				sikGroup.POST("/pegawai/:nip/role", cfg.SIKHandler.UpdateRoleByNIP)
+				sikGroup.PUT("/pegawai/:nip/role", cfg.SIKHandler.UpdateRoleByNIP)
+				sikGroup.POST("/pegawai/:nip/reset-password", cfg.SIKHandler.ResetPassword)
+				sikGroup.POST("/reset-password", cfg.SIKHandler.ResetPassword)
+				sikGroup.GET("/pegawai", cfg.SIKHandler.ListOrSearch)
+				sikGroup.GET("/referensi", cfg.SIKHandler.GetReferensi)
+				sikGroup.POST("/sync", cfg.SIKHandler.SyncMaster)
+				sikGroup.GET("/sync-history", cfg.SIKHandler.ListSyncHistory)
+				sikGroup.GET("/sync-history/:id", cfg.SIKHandler.GetSyncHistoryDetail)
+			}
+		}
+
+		// Module Satuan Kerja
+		if cfg.SatuanKerjaHandler != nil {
+			satkerGroup := v1Group.Group("/satuan-kerja")
+			{
+				satkerGroup.GET("", cfg.SatuanKerjaHandler.List)
+				satkerGroup.GET("/:id", cfg.SatuanKerjaHandler.GetByID)
+				satkerGroup.GET("/:id/pegawai", cfg.SatuanKerjaHandler.GetPegawai)
+				satkerGroup.POST("/sync-sik", cfg.SatuanKerjaHandler.Sync)
+			}
+		}
+
+		// Module Unit Kerja
+		if cfg.UnitKerjaHandler != nil {
+			unitGroup := v1Group.Group("/unit-kerja")
+			{
+				unitGroup.GET("", cfg.UnitKerjaHandler.List)
+				unitGroup.GET("/:id", cfg.UnitKerjaHandler.GetByID)
+				unitGroup.GET("/:id/pegawai", cfg.UnitKerjaHandler.GetPegawai)
+				unitGroup.POST("/sync-sik", cfg.UnitKerjaHandler.Sync)
+			}
+		}
+
+		// Module Sub Unit Kerja
+		if cfg.SubUnitKerjaHandler != nil {
+			subGroup := v1Group.Group("/sub-unit-kerja")
+			{
+				subGroup.GET("", cfg.SubUnitKerjaHandler.List)
+				subGroup.GET("/:id", cfg.SubUnitKerjaHandler.GetByID)
+				subGroup.GET("/:id/pegawai", cfg.SubUnitKerjaHandler.GetPegawai)
+				subGroup.POST("/sync-sik", cfg.SubUnitKerjaHandler.Sync)
+			}
+		}
+
+		// User SIK Synchronization (supports both authenticated user sync and public/system master sync)
+		if cfg.UserHandler != nil {
+			v1Group.POST("/users/sync-sik", middleware.OptionalAuth(cfg.JWTService, cfg.BlacklistRepo), cfg.UserHandler.SyncSIK)
+		}
+
 		// Authenticated Routes
 		authMiddleware := middleware.Auth(cfg.JWTService, cfg.BlacklistRepo)
 		authenticated := v1Group.Group("")
@@ -124,19 +188,37 @@ func SetupRouter(cfg *RouterConfig) *gin.Engine {
 				userGroup.GET("/practitioners", cfg.UserHandler.ListPractitioners)
 			}
 
+			// Module SIK (Protected: get logged-in user SIK data)
+			if cfg.SIKHandler != nil {
+				authenticated.GET("/sik/me", cfg.SIKHandler.Me)
+			}
+
 			// Backward compatibility alias for /api/v1/auth/me
 			authenticated.GET("/auth/me", cfg.UserHandler.Me)
 
 			// Module Session
 			sessionsGroup := authenticated.Group("/sessions")
 			{
-				sessionsGroup.POST("", middleware.RequireRoles(userdomain.RoleClient, userdomain.RoleAdmin), cfg.SessionHandler.BookSession)
+				sessionsGroup.POST("", middleware.RequireRoles(userdomain.RolePegawai, userdomain.RoleAdmin, userdomain.RoleSuperAdmin), cfg.SessionHandler.BookSession)
 				sessionsGroup.GET("", cfg.SessionHandler.ListSessions)
 				sessionsGroup.GET("/:id", cfg.SessionHandler.GetSession)
 				sessionsGroup.PATCH("/:id/status", cfg.SessionHandler.UpdateStatus)
 				sessionsGroup.POST("/:id/meetings", cfg.SessionHandler.AddMeeting)
+				sessionsGroup.PUT("/:id/meetings/:meetingId", cfg.SessionHandler.UpdateMeeting)
+				sessionsGroup.PATCH("/:id/meetings/:meetingId", cfg.SessionHandler.UpdateMeeting)
 				sessionsGroup.DELETE("/:id/meetings/:meetingId", cfg.SessionHandler.DeleteMeeting)
 				sessionsGroup.POST("/:id/resend-notification", cfg.SessionHandler.ResendNotification)
+
+				// Child: session_peserta
+				sessionsGroup.GET("/:id/peserta", cfg.SessionHandler.ListPeserta)
+				sessionsGroup.POST("/:id/peserta", cfg.SessionHandler.AddPeserta)
+
+				// Child: session_pertemuan
+				sessionsGroup.GET("/:id/pertemuan", cfg.SessionHandler.ListPertemuan)
+				sessionsGroup.GET("/:id/pertemuan/:pertemuanId/catatan", cfg.SessionHandler.ListCatatanPertemuan)
+
+				// Child: session_pertemuan_peserta_catatan
+				sessionsGroup.POST("/:id/catatan", cfg.SessionHandler.SaveCatatanPertemuan)
 			}
 		}
 	}

@@ -157,13 +157,17 @@ function SSOCallbackContent() {
         (result.data && result.data.token) ||
         (result.data && result.data.tokens && result.data.tokens.access_token);
 
+      const refreshToken =
+        (result.tokens && result.tokens.refresh_token) ||
+        (result.data && result.data.tokens && result.data.tokens.refresh_token);
+
       const user = result.user || (result.data && result.data.user);
 
       if (!token) {
         throw new Error("Server tidak mengembalikan token autentikasi");
       }
 
-      saveSession(token, user);
+      saveSession(token, user, refreshToken);
       setStatusMsg("Berhasil! Mengalihkan ke dashboard...");
       setTimeout(() => router.push("/dashboard"), 500);
     } catch (err: any) {
@@ -174,11 +178,15 @@ function SSOCallbackContent() {
   /**
    * Simpan CMC JWT dan user ke cookie + localStorage
    */
-  const saveSession = (token: string, user: any) => {
+  const saveSession = (token: string, user: any, refreshToken?: string) => {
     document.cookie = `auth_token=${token}; path=/; max-age=86400; SameSite=Lax`;
     localStorage.setItem("auth_token", token);
     localStorage.setItem("token", token);
     localStorage.setItem("cmc_token", token);
+    if (refreshToken) {
+      localStorage.setItem("refresh_token", refreshToken);
+      localStorage.setItem("cmc_refresh_token", refreshToken);
+    }
     if (user) {
       const userStr = JSON.stringify(user);
       localStorage.setItem("user", userStr);

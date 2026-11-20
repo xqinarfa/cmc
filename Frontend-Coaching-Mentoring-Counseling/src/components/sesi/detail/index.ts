@@ -1,5 +1,6 @@
 export { default as SesiDetailHero } from "./SesiDetailHero";
 export { default as SesiHeaderCard } from "./SesiHeaderCard";
+export { default as PesertaSesiCard } from "./PesertaSesiCard";
 export { default as MeetingListSection } from "./MeetingListSection";
 export { SesiDetailSidebar } from "./SesiDetailSidebar";
 export { MeetingDetailModal } from "./MeetingDetailModal";

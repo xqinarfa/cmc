@@ -18,9 +18,21 @@ import (
 	authrepo "github.com/kalanara/cmc-backend/internal/modules/auth/repository"
 	authusecase "github.com/kalanara/cmc-backend/internal/modules/auth/usecase"
 	healthdelivery "github.com/kalanara/cmc-backend/internal/modules/health/delivery/http"
+	satkerdelivery "github.com/kalanara/cmc-backend/internal/modules/satuan_kerja/delivery/http"
+	satkerrepo "github.com/kalanara/cmc-backend/internal/modules/satuan_kerja/repository"
+	satkerusecase "github.com/kalanara/cmc-backend/internal/modules/satuan_kerja/usecase"
 	sessiondelivery "github.com/kalanara/cmc-backend/internal/modules/session/delivery/http"
 	sessionrepo "github.com/kalanara/cmc-backend/internal/modules/session/repository"
 	sessionusecase "github.com/kalanara/cmc-backend/internal/modules/session/usecase"
+	sikdelivery "github.com/kalanara/cmc-backend/internal/modules/sik/delivery/http"
+	sikrepo "github.com/kalanara/cmc-backend/internal/modules/sik/repository"
+	sikusecase "github.com/kalanara/cmc-backend/internal/modules/sik/usecase"
+	subdelivery "github.com/kalanara/cmc-backend/internal/modules/sub_unit_kerja/delivery/http"
+	subrepo "github.com/kalanara/cmc-backend/internal/modules/sub_unit_kerja/repository"
+	subusecase "github.com/kalanara/cmc-backend/internal/modules/sub_unit_kerja/usecase"
+	unitdelivery "github.com/kalanara/cmc-backend/internal/modules/unit_kerja/delivery/http"
+	unitrepo "github.com/kalanara/cmc-backend/internal/modules/unit_kerja/repository"
+	unitusecase "github.com/kalanara/cmc-backend/internal/modules/unit_kerja/usecase"
 	userdelivery "github.com/kalanara/cmc-backend/internal/modules/user/delivery/http"
 	userrepo "github.com/kalanara/cmc-backend/internal/modules/user/repository"
 	userusecase "github.com/kalanara/cmc-backend/internal/modules/user/usecase"
@@ -110,12 +122,33 @@ func main() {
 	jwtService := platformsecurity.NewJWTService(cfg.JWT)
 	customValidator := validator.New()
 
-	// 9. Module: User
-	userRepository := userrepo.NewUserRepository(db)
-	userUsecaseInstance := userusecase.NewUserUsecase(userRepository)
-	userHandler := userdelivery.NewUserHandler(userUsecaseInstance)
+	// 9. Module: SIK SOAP Client & References
+	sikSoapClient := sikrepo.NewSOAPClient(cfg.SIK.BaseURL, cfg.SIK.Username, cfg.SIK.Password)
 
-	// 10. Module: Auth
+	// 10. Module: Satuan Kerja, Unit Kerja, & Sub Unit Kerja
+	satkerRepository := satkerrepo.NewSatuanKerjaRepository(db)
+	satkerUsecaseInstance := satkerusecase.NewSatuanKerjaUsecase(satkerRepository)
+	satkerHandler := satkerdelivery.NewSatuanKerjaHandler(satkerUsecaseInstance)
+
+	unitKerjaRepository := unitrepo.NewUnitKerjaRepository(db, sikSoapClient)
+	unitKerjaUsecaseInstance := unitusecase.NewUnitKerjaUsecase(unitKerjaRepository)
+	unitKerjaHandler := unitdelivery.NewUnitKerjaHandler(unitKerjaUsecaseInstance)
+
+	subUnitKerjaRepository := subrepo.NewSubUnitKerjaRepository(db)
+	subUnitKerjaUsecaseInstance := subusecase.NewSubUnitKerjaUsecase(subUnitKerjaRepository)
+	subUnitKerjaHandler := subdelivery.NewSubUnitKerjaHandler(subUnitKerjaUsecaseInstance)
+
+	// 11. Module: SIK (Sistem Informasi Kepegawaian)
+	sikRepository := sikrepo.NewSIKRepository(db)
+	sikUsecaseInstance := sikusecase.NewSIKUsecase(sikRepository, cfg.SIK, unitKerjaRepository)
+
+	// 11. Module: User
+	userRepository := userrepo.NewUserRepository(db)
+	userUsecaseInstance := userusecase.NewUserUsecase(userRepository, sikRepository)
+	userHandler := userdelivery.NewUserHandler(userUsecaseInstance, sikUsecaseInstance)
+	sikHandler := sikdelivery.NewSIKHandler(sikUsecaseInstance, userRepository, passwordHasher)
+
+	// 12. Module: Auth
 	var blacklistRepository authdomain.TokenBlacklistRepository
 	if redisClient != nil {
 		blacklistRepository = authrepo.NewTokenBlacklistRepository(redisClient)
@@ -124,26 +157,30 @@ func main() {
 	if natsClient != nil {
 		eventPublisher = natsClient
 	}
-	authUsecaseInstance := authusecase.NewAuthUsecase(userRepository, blacklistRepository, passwordHasher, jwtService, eventPublisher, cfg.SSO)
+	authUsecaseInstance := authusecase.NewAuthUsecase(userRepository, blacklistRepository, passwordHasher, jwtService, eventPublisher, cfg.SSO, sikRepository)
 	authHandler := authdelivery.NewAuthHandler(authUsecaseInstance, customValidator)
 
-	// 11. Module: Session
+	// 13. Module: Session
 	sessionRepository := sessionrepo.NewSessionRepository(db)
 	sessionUsecaseInstance := sessionusecase.NewSessionUsecase(sessionRepository, userRepository, natsClient)
 	sessionHandler := sessiondelivery.NewSessionHandler(sessionUsecaseInstance, customValidator)
 
-	// 12. Module: Health
+	// 14. Module: Health
 	healthHandler := healthdelivery.NewHealthHandler(db, redisClient, natsClient, minioClient)
 
-	// 13. Mount Application HTTP Router
+	// 15. Mount Application HTTP Router
 	router := apphttp.SetupRouter(&apphttp.RouterConfig{
-		Config:         cfg,
-		JWTService:     jwtService,
-		BlacklistRepo:  blacklistRepository,
-		HealthHandler:  healthHandler,
-		AuthHandler:    authHandler,
-		UserHandler:    userHandler,
-		SessionHandler: sessionHandler,
+		Config:             cfg,
+		JWTService:         jwtService,
+		BlacklistRepo:      blacklistRepository,
+		HealthHandler:      healthHandler,
+		AuthHandler:        authHandler,
+		UserHandler:        userHandler,
+		SessionHandler:     sessionHandler,
+		SIKHandler:         sikHandler,
+		SatuanKerjaHandler:  satkerHandler,
+		UnitKerjaHandler:    unitKerjaHandler,
+		SubUnitKerjaHandler: subUnitKerjaHandler,
 	})
 
 	httpServer := &http.Server{

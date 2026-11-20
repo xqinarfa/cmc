@@ -19,7 +19,11 @@ import {
   SesiFixModal,
   SesiToast,
 } from "@/components/sesi";
-import { fetchSessions, resendNotification, mapApiSessionToSessionItem } from "@/lib/api";
+import {
+  fetchSessions,
+  resendNotification,
+  mapApiSessionToSessionItem,
+} from "@/lib/api";
 
 // ─── Loading Skeleton ─────────────────────────────────────────────────────────
 function SesiCardSkeleton() {
@@ -69,8 +73,12 @@ export default function SesiHomePage() {
   const [sendingNotifId, setSendingNotifId] = useState<string | null>(null);
 
   // Modals state
-  const [certModalSession, setCertModalSession] = useState<SessionItem | null>(null);
-  const [fixModalSession, setFixModalSession] = useState<SessionItem | null>(null);
+  const [certModalSession, setCertModalSession] = useState<SessionItem | null>(
+    null,
+  );
+  const [fixModalSession, setFixModalSession] = useState<SessionItem | null>(
+    null,
+  );
   const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
   const [fixClarificationNote, setFixClarificationNote] = useState("");
 
@@ -78,7 +86,8 @@ export default function SesiHomePage() {
   const loadSessions = useCallback(async () => {
     const token =
       typeof window !== "undefined"
-        ? localStorage.getItem("auth_token") || localStorage.getItem("cmc_token")
+        ? localStorage.getItem("auth_token") ||
+          localStorage.getItem("cmc_token")
         : null;
 
     if (!token) {
@@ -95,7 +104,7 @@ export default function SesiHomePage() {
       setError(
         err instanceof Error
           ? err.message
-          : "Gagal memuat data sesi. Silakan coba lagi."
+          : "Gagal memuat data sesi. Silakan coba lagi.",
       );
     } finally {
       setLoading(false);
@@ -110,7 +119,8 @@ export default function SesiHomePage() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (
-        (e.key === "/" || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k")) &&
+        (e.key === "/" ||
+          ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k")) &&
         document.activeElement?.tagName !== "INPUT" &&
         document.activeElement?.tagName !== "TEXTAREA"
       ) {
@@ -144,9 +154,13 @@ export default function SesiHomePage() {
     setSendingNotifId(sessionId);
     try {
       await resendNotification(sessionId);
-      showToast(`Notifikasi pengingat untuk "${sessionTitle}" berhasil dikirim ulang ke Coach/Mentor.`);
+      showToast(
+        `Notifikasi pengingat untuk "${sessionTitle}" berhasil dikirim ulang ke Coach/Mentor.`,
+      );
     } catch {
-      showToast(`Gagal mengirim notifikasi untuk "${sessionTitle}". Coba lagi.`);
+      showToast(
+        `Gagal mengirim notifikasi untuk "${sessionTitle}". Coba lagi.`,
+      );
     } finally {
       setSendingNotifId(null);
     }
@@ -183,25 +197,37 @@ export default function SesiHomePage() {
   const filteredSessionsRaw = sessions.filter((item) => {
     if (!matchesSearch(item)) return false;
     if (activeTab === "semua") return true;
-    if (activeTab === "perlu_tindakan") return item.section === "perlu_tindakan";
+    if (activeTab === "perlu_tindakan")
+      return item.section === "perlu_tindakan";
     if (activeTab === "berlangsung") return item.section === "berlangsung";
     if (activeTab === "selesai") return item.section === "selesai";
     return true;
   });
 
   const filteredSessions =
-    sortOrder === "terlama" ? [...filteredSessionsRaw].reverse() : filteredSessionsRaw;
+    sortOrder === "terlama"
+      ? [...filteredSessionsRaw].reverse()
+      : filteredSessionsRaw;
 
-  const perluTindakanList = filteredSessions.filter((s) => s.section === "perlu_tindakan");
-  const berlangsungList = filteredSessions.filter((s) => s.section === "berlangsung");
-  const selesaiListAll = filteredSessions.filter((s) => s.section === "selesai");
-  const selesaiListDisplayed = showAllCompleted ? selesaiListAll : selesaiListAll.slice(0, 3);
+  const perluTindakanList = filteredSessions.filter(
+    (s) => s.section === "perlu_tindakan",
+  );
+  const berlangsungList = filteredSessions.filter(
+    (s) => s.section === "berlangsung",
+  );
+  const selesaiListAll = filteredSessions.filter(
+    (s) => s.section === "selesai",
+  );
+  const selesaiListDisplayed = showAllCompleted
+    ? selesaiListAll
+    : selesaiListAll.slice(0, 3);
   const hiddenSelesaiCount = Math.max(0, selesaiListAll.length - 3);
 
   // Dynamic counts (dari sessions API)
   const counts = {
     total: sessions.length,
-    perluTindakan: sessions.filter((s) => s.section === "perlu_tindakan").length,
+    perluTindakan: sessions.filter((s) => s.section === "perlu_tindakan")
+      .length,
     berlangsung: sessions.filter((s) => s.section === "berlangsung").length,
     selesai: sessions.filter((s) => s.section === "selesai").length,
   };
@@ -215,13 +241,14 @@ export default function SesiHomePage() {
       <SesiHero />
 
       {/* 3. Main Content Container */}
-      <main className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 -mt-10 relative z-20 pb-16 flex-1 w-full flex flex-col gap-5">
+      <main className="w-full mx-auto px-4 sm:px-8 lg:px-16 xl:px-24 -mt-10 relative z-20 pb-16 flex-1 w-full flex flex-col gap-5">
         {/* Capaian JP Progress Card */}
         <SesiJpProgressCard
           activeTab={activeTab}
           onFilterClick={handleFilterClick}
           countPerluTindakan={counts.perluTindakan}
           countBerlangsung={counts.berlangsung}
+          sessions={sessions}
         />
 
         {/* Scroll anchor */}
@@ -245,11 +272,23 @@ export default function SesiHomePage() {
         {/* ─── Error State ─────────────────────────────────────────────── */}
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-[10px] p-4 flex items-start gap-3">
-            <svg className="size-5 text-red-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            <svg
+              className="size-5 text-red-500 shrink-0 mt-0.5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              />
             </svg>
             <div className="flex flex-col gap-1">
-              <p className="text-sm font-semibold text-red-700">Gagal memuat sesi</p>
+              <p className="text-sm font-semibold text-red-700">
+                Gagal memuat sesi
+              </p>
               <p className="text-xs text-red-600">{error}</p>
               <button
                 type="button"
@@ -374,7 +413,11 @@ export default function SesiHomePage() {
                     stroke="currentColor"
                     strokeWidth="2.5"
                   >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M19 9l-7 7-7-7"
+                    />
                   </svg>
                   <span className="text-[13px] font-semibold text-[#1e5fa8]">
                     {showAllCompleted
@@ -388,7 +431,10 @@ export default function SesiHomePage() {
 
         {/* ─── Empty State ─────────────────────────────────────────────── */}
         {!loading && !error && filteredSessions.length === 0 && (
-          <SesiEmptyState searchQuery={searchQuery} onResetFilter={handleResetFilter} />
+          <SesiEmptyState
+            searchQuery={searchQuery}
+            onResetFilter={handleResetFilter}
+          />
         )}
       </main>
 

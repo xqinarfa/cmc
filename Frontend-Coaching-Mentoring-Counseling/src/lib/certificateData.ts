@@ -1,3 +1,5 @@
+import { ApiSession, ApiUser } from "./api/sessions";
+
 export interface CertificateModule {
   name: string;
   jp: number;
@@ -6,10 +8,19 @@ export interface CertificateModule {
   competencyDomain: string;
 }
 
+export interface CertificateRecipient {
+  name: string;
+  nip: string;
+  rank?: string;
+  position?: string;
+  workUnit?: string;
+  agency?: string;
+}
+
 export interface CertificateItem {
   id: string;
   certNumber: string;
-  category: "kumulatif" | "coaching" | "mentoring";
+  category: "kumulatif" | "coaching" | "mentoring" | "konseling";
   categoryLabel: string;
   title: string;
   subtitle: string;
@@ -21,7 +32,7 @@ export interface CertificateItem {
     name: string;
     title: string;
     nip?: string;
-    role: "Coach" | "Mentor" | "Instruktur Utama";
+    role: "Coach" | "Mentor" | "Instruktur Utama" | string;
     avatarInitials: string;
   };
   signee: {
@@ -39,6 +50,7 @@ export interface CertificateItem {
   modules?: CertificateModule[];
   competencyTags: string[];
   isFeatured?: boolean;
+  recipient?: CertificateRecipient;
 }
 
 export const USER_RECIPIENT = {
@@ -325,34 +337,45 @@ export interface VerificationAuditLog {
     serviceDeskRef: string;
     bknSyncStatus: "SYNCHRONIZED";
     jpCredited: number;
-    skpIntegration: "TERHUBUNG_SKP_2024";
+    skpIntegration: string;
   };
 }
 
-export function verifyCertificateCode(code: string): VerificationAuditLog | null {
+export function verifyCertificateCode(
+  code: string,
+  certificateList: CertificateItem[] = []
+): VerificationAuditLog | null {
   const cleanCode = code.trim().toUpperCase().replace(/-/g, "/");
-  const found = CERTIFICATES_DATA.find(
+  const found = certificateList.find(
     (c) =>
       c.certNumber.toUpperCase() === cleanCode ||
       c.certNumber.replace(/\//g, "-").toUpperCase() === cleanCode ||
       c.certNumber.endsWith(cleanCode) ||
-      cleanCode.includes(c.certNumber.split("/").pop() || "")
+      cleanCode.includes(c.certNumber.split("/").pop() || "") ||
+      (c.id && cleanCode.includes(c.id.toUpperCase()))
   );
 
   if (!found) return null;
 
+  const recipient = found.recipient || {
+    name: "Aparatur Sipil Negara",
+    nip: "-",
+  };
+
   return {
     certNumber: found.certNumber,
-    recipientName: USER_RECIPIENT.name,
-    recipientNip: USER_RECIPIENT.nip,
+    recipientName: recipient.name,
+    recipientNip: recipient.nip,
     programTitle: found.title,
     issueDate: found.issueDate,
     issuer: found.signee.agency,
     jp: found.jp,
     digitalSignature: {
       signer: found.signee.name,
-      authority: "Balai Sertifikasi Elektronik (BSrE) — Badan Siber dan Sandi Negara (BSSN)",
-      certificateSerial: "BSRE-KEMENHUB-" + found.bsreHash.substring(0, 12).toUpperCase(),
+      authority:
+        "Balai Sertifikasi Elektronik (BSrE) — Badan Siber dan Sandi Negara (BSSN)",
+      certificateSerial:
+        "BSRE-KEMENHUB-" + found.bsreHash.substring(0, 12).toUpperCase(),
       timestamp: found.siasnSyncTimestamp,
       algorithm: "SHA-256 with RSA 2048-bit",
       status: "VALID",
@@ -362,7 +385,237 @@ export function verifyCertificateCode(code: string): VerificationAuditLog | null
       serviceDeskRef: "BKN-SIASN-API-v2.4",
       bknSyncStatus: "SYNCHRONIZED",
       jpCredited: found.jp,
-      skpIntegration: "TERHUBUNG_SKP_2024",
+      skpIntegration: `TERHUBUNG_SKP_${new Date().getFullYear()}`,
     },
   };
+}
+
+export function buildCertificatesFromDatabase(
+  sessions: ApiSession[],
+  user?: ApiUser | null
+): CertificateItem[] {
+  if (!sessions || !Array.isArray(sessions) || sessions.length === 0) {
+    return [];
+  }
+
+  // Filter only eligible sessions: completed or has recorded JP > 0
+  const eligibleSessions = sessions.filter((s) => {
+    const isCompleted = (s.status || "").toLowerCase() === "completed";
+    const hasJp = typeof s.current_jp === "number" && s.current_jp > 0;
+    return isCompleted || hasJp;
+  });
+
+  if (eligibleSessions.length === 0) {
+    return [];
+  }
+
+  const recipient: CertificateRecipient = {
+    name:
+      user?.full_name ||
+      eligibleSessions[0]?.client?.full_name ||
+      "Pegawai Kementerian Perhubungan",
+    nip: user?.nip || eligibleSessions[0]?.client?.nip || "-",
+    rank:
+      user?.pangkat_golongan ||
+      eligibleSessions[0]?.client?.pangkat_golongan ||
+      "Penata Muda (III/a)",
+    position:
+      user?.jabatan ||
+      eligibleSessions[0]?.client?.jabatan ||
+      "Aparatur Sipil Negara",
+    workUnit:
+      user?.unit_kerja ||
+      user?.satuan_kerja ||
+      eligibleSessions[0]?.client?.unit_kerja ||
+      "Badan Pengembangan SDM Perhubungan",
+    agency: "Badan Pengembangan SDM Perhubungan — Kementerian Perhubungan RI",
+  };
+
+  const getInitials = (fullName: string) => {
+    const parts = fullName.trim().split(/\s+/);
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  };
+
+  // Convert each session to an individual certificate
+  const sessionCertificates: CertificateItem[] = eligibleSessions.map((s, idx) => {
+    const sessionYear = s.created_at
+      ? new Date(s.created_at).getFullYear()
+      : 2026;
+    const cleanId = (s.id || `ses-${idx}`)
+      .replace(/-/g, "")
+      .slice(0, 4)
+      .toUpperCase();
+    const rawType = (s.type || "coaching").toLowerCase();
+    const category: "coaching" | "mentoring" | "konseling" =
+      rawType === "mentoring"
+        ? "mentoring"
+        : rawType === "counseling" || rawType === "konseling"
+        ? "konseling"
+        : "coaching";
+
+    const typeCode =
+      category === "mentoring"
+        ? "MENTOR"
+        : category === "konseling"
+        ? "COUNSEL"
+        : "COACH";
+
+    const categoryLabel =
+      category === "mentoring"
+        ? "Mentoring Fungsional"
+        : category === "konseling"
+        ? "Konseling ASN"
+        : "Coaching Eksekutif";
+
+    const certNumber = `SER/CMC-${typeCode}-${sessionYear}/${cleanId}`;
+    const jp =
+      s.current_jp && s.current_jp > 0 ? s.current_jp : s.target_jp || 2;
+    const title = s.title || s.topic || `Sesi Pengembangan ${categoryLabel}`;
+    const subtitle =
+      s.objective ||
+      `Pendampingan Terstruktur Berbasis Sasaran Kinerja Pegawai (SKP) BPSDMP`;
+    const description =
+      s.notes ||
+      `Diberikan sebagai pengakuan resmi atas keberhasilan menyelesaikan siklus ${category} dengan bobot ${jp} Jam Pelajaran (JP) yang tervalidasi di SIASN BKN.`;
+
+    const issueDateISO = s.created_at || new Date().toISOString();
+    const issueDate = s.created_at
+      ? new Date(s.created_at).toLocaleDateString("id-ID", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        })
+      : "2026";
+
+    const mentorName =
+      s.practitioner?.full_name || "Tim Pembina Corpu BPSDMP";
+    const mentorTitle =
+      s.practitioner?.jabatan || "Coach/Mentor Terakreditasi BPSDMP";
+
+    // Modules derived from real session meetings
+    let modules: CertificateModule[] = [];
+    if (s.pertemuan_list && s.pertemuan_list.length > 0) {
+      modules = s.pertemuan_list.map((m, mIdx) => ({
+        name: m.title || `Pertemuan ke-${m.meeting_number || mIdx + 1}`,
+        jp: 2, // 1 pertemuan = 2 JP
+        instructor: `${mentorName} (${
+          category === "mentoring" ? "Mentor" : "Coach"
+        })`,
+        date: m.scheduled_date
+          ? new Date(m.scheduled_date).toLocaleDateString("id-ID", {
+              day: "numeric",
+              month: "short",
+              year: "numeric",
+            })
+          : issueDate,
+        competencyDomain: "Pengembangan Diri & Kepemimpinan",
+      }));
+    } else {
+      modules = [
+        {
+          name: title,
+          jp,
+          instructor: `${mentorName} (${
+            category === "mentoring" ? "Mentor" : "Coach"
+          })`,
+          date: issueDate,
+          competencyDomain: "Kompetensi Manajerial & Teknis",
+        },
+      ];
+    }
+
+    return {
+      id: `cert-${s.id || idx}`,
+      certNumber,
+      category,
+      categoryLabel,
+      title,
+      subtitle,
+      description,
+      jp,
+      issueDate,
+      issueDateISO,
+      coachOrMentor: {
+        name: mentorName,
+        title: mentorTitle,
+        nip: s.practitioner?.nip || "19780512 200212 1 003",
+        role: category === "mentoring" ? "Mentor" : "Coach",
+        avatarInitials: getInitials(mentorName),
+      },
+      signee: {
+        name: "Dr. Ir. Wisnu Handoko, M.Sc.",
+        nip: "19690812 199403 1 001",
+        title: "Kepala Badan Pengembangan SDM Perhubungan",
+        agency: "Kementerian Perhubungan Republik Indonesia",
+      },
+      status: "TERVALIDASI",
+      siasnSyncStatus: "TERVALIDASI_SIASN",
+      siasnTransactionId: `TRX-BKN-${sessionYear}-${cleanId}9201`,
+      siasnSyncTimestamp: `${issueDate} · 16:30 WIB`,
+      bsreHash:
+        cleanId.repeat(8).padEnd(64, "0").slice(0, 64).toLowerCase(),
+      qrPayload: `https://cmc.dephub.go.id/verify/${cleanId}`,
+      recipient,
+      competencyTags: [
+        "Manajemen Kinerja ASN",
+        "Kepemimpinan Pelayanan",
+        "Pelayanan Prima",
+        "Budaya BerAKHLAK",
+      ],
+      modules,
+    };
+  });
+
+  // Generate Cumulative Certificate aggregating all sessions
+  const totalCumulativeJp = sessionCertificates.reduce(
+    (acc, curr) => acc + curr.jp,
+    0
+  );
+  const allModules = sessionCertificates.flatMap((c) => c.modules || []);
+  const currentYear = new Date().getFullYear();
+
+  const kumulatifCertificate: CertificateItem = {
+    id: "cert-kumulatif-real",
+    certNumber: `SER/CMC-KEMENHUB/${currentYear}/0942`,
+    category: "kumulatif",
+    categoryLabel: "Program Terpadu",
+    title: `Sertifikat Kelulusan Siklus Pembelajaran Terpadu CMC ${currentYear}`,
+    subtitle:
+      "Pengembangan Kompetensi Berkelanjutan Melalui Coaching, Mentoring & Konseling",
+    description: `Diberikan sebagai pengakuan resmi atas pemenuhan ${totalCumulativeJp} Jam Pelajaran (JP) dalam siklus pembelajaran mandiri ASN Kemenhub Tahun Anggaran ${currentYear}, mencakup penguatan manajerial, kepemimpinan transformatif, dan tata kelola berbasis data.`,
+    jp: totalCumulativeJp,
+    issueDate: `28 Desember ${currentYear}`,
+    issueDateISO: `${currentYear}-12-28`,
+    coachOrMentor: {
+      name: "Tim Pembina Corpu BPSDMP",
+      title: "Dewan Coach & Mentor Terakreditasi BPSDMP",
+      role: "Instruktur Utama",
+      avatarInitials: "TC",
+    },
+    signee: {
+      name: "Dr. Ir. Wisnu Handoko, M.Sc.",
+      nip: "19690812 199403 1 001",
+      title: "Kepala Badan Pengembangan SDM Perhubungan",
+      agency: "Kementerian Perhubungan Republik Indonesia",
+    },
+    status: "TERVALIDASI",
+    siasnSyncStatus: "TERVALIDASI_SIASN",
+    siasnTransactionId: `TRX-BKN-${currentYear}1228-8849201`,
+    siasnSyncTimestamp: `28 Des ${currentYear} · 16:30 WIB`,
+    bsreHash:
+      "9b8d7c4a1e3f2085c6d48291a0b5e4f3a2c1d0e9b8a7f6e5d4c3b2a1f0e9d8c7",
+    qrPayload: `https://cmc.dephub.go.id/verify/SER-CMC-KEMENHUB-${currentYear}-0942`,
+    isFeatured: true,
+    recipient,
+    competencyTags: [
+      "Manajemen Kinerja ASN",
+      "Kepemimpinan Pelayanan",
+      "Data-Driven Decision Making",
+      "Budaya BerAKHLAK",
+    ],
+    modules: allModules,
+  };
+
+  return [kumulatifCertificate, ...sessionCertificates];
 }

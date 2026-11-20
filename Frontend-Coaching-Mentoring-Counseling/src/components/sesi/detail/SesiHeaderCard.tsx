@@ -15,6 +15,7 @@ interface SesiHeaderCardProps {
   practitionerName?: string;
   practitionerRole?: string;
   startDate?: string;
+  sessionFormat?: string;
 }
 
 export default function SesiHeaderCard({
@@ -30,6 +31,7 @@ export default function SesiHeaderCard({
   practitionerName = "Rudi Santoso, M.M.",
   practitionerRole = "Coach",
   startDate = "6 Jan 2025",
+  sessionFormat = "1-on-1",
 }: SesiHeaderCardProps) {
   const isCompleted = status === "completed" || status === "selesai";
   const isRejected = status === "rejected" || status === "dikembalikan";
@@ -73,6 +75,10 @@ export default function SesiHeaderCard({
             <div className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full ${badgeBg}`}>
               <span className={`size-1.5 rounded-full ${dotBg}`} />
               <span className="text-[11.5px] font-semibold">{statusLabel}</span>
+            </div>
+
+            <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-100 text-[#334155] text-[11px] font-semibold">
+              <span>{sessionFormat === "1-on-group" ? "👥 1-on-Group (Kelompok)" : "👤 1-on-1 (Individu)"}</span>
             </div>
           </div>
 

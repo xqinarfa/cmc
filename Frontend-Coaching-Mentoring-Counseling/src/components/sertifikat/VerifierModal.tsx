@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { VerificationAuditLog } from "@/lib/certificateData";
+import { CertificateItem, VerificationAuditLog } from "@/lib/certificateData";
 
 interface VerifierModalProps {
   isOpen: boolean;
@@ -11,6 +11,7 @@ interface VerifierModalProps {
   onVerify: (code?: string) => void;
   hasVerified: boolean;
   result: VerificationAuditLog | null;
+  sampleCertificates?: CertificateItem[];
 }
 
 export default function VerifierModal({
@@ -21,8 +22,13 @@ export default function VerifierModal({
   onVerify,
   hasVerified,
   result,
+  sampleCertificates = [],
 }: VerifierModalProps) {
   if (!isOpen) return null;
+
+  const currentYear = new Date().getFullYear();
+  const defaultPlaceholder =
+    sampleCertificates[0]?.certNumber || `Contoh: SER/CMC-KEMENHUB/${currentYear}/0942`;
 
   return (
     <motion.div
@@ -93,7 +99,7 @@ export default function VerifierModal({
               type="text"
               value={inputCode}
               onChange={(e) => onInputChange(e.target.value)}
-              placeholder="Contoh: SER/CMC-KEMENHUB/2024/0942"
+              placeholder={defaultPlaceholder}
               className="flex-1 h-10 px-3 rounded-lg border border-slate-300 font-mono text-xs focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent uppercase"
             />
             <motion.button
@@ -107,30 +113,26 @@ export default function VerifierModal({
           </div>
 
           {/* Sample quick buttons */}
-          <div className="flex items-center gap-1.5 flex-wrap pt-1 text-[11px] text-slate-500">
-            <span>Pilih sampel cepat:</span>
-            <button
-              type="button"
-              onClick={() => {
-                onInputChange("SER/CMC-KEMENHUB/2024/0942");
-                onVerify("SER/CMC-KEMENHUB/2024/0942");
-              }}
-              className="text-blue-700 font-mono underline hover:text-blue-900 cursor-pointer"
-            >
-              .../2024/0942 (14 JP)
-            </button>
-            <span>·</span>
-            <button
-              type="button"
-              onClick={() => {
-                onInputChange("SER/CMC-COACH/2024/0821");
-                onVerify("SER/CMC-COACH/2024/0821");
-              }}
-              className="text-blue-700 font-mono underline hover:text-blue-900 cursor-pointer"
-            >
-              .../2024/0821 (4 JP)
-            </button>
-          </div>
+          {sampleCertificates.length > 0 && (
+            <div className="flex items-center gap-1.5 flex-wrap pt-1 text-[11px] text-slate-500">
+              <span>Pilih sampel cepat:</span>
+              {sampleCertificates.slice(0, 2).map((sc, scIdx) => (
+                <span key={sc.id} className="inline-flex items-center gap-1">
+                  {scIdx > 0 && <span>·</span>}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onInputChange(sc.certNumber);
+                      onVerify(sc.certNumber);
+                    }}
+                    className="text-blue-700 font-mono underline hover:text-blue-900 cursor-pointer"
+                  >
+                    .../{sc.certNumber.split("/").pop()} ({sc.jp} JP)
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Verification Result Display */}

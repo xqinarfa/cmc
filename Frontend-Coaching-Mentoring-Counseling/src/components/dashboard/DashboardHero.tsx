@@ -1,10 +1,24 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 
 export function DashboardHero() {
+  const [userName, setUserName] = useState("Andi Pratama");
+
+  useEffect(() => {
+    try {
+      const stored =
+        localStorage.getItem("user") || localStorage.getItem("cmc_user");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed?.full_name || parsed?.name) {
+          setUserName(parsed.full_name || parsed.name);
+        }
+      }
+    } catch {}
+  }, []);
   return (
     <section
       className="relative w-full overflow-hidden pt-6 pb-20 px-4 sm:px-6 lg:px-8 text-white shadow-[0px_12px_28px_0px_rgba(15,23,42,0.08)]"
@@ -47,9 +61,12 @@ export function DashboardHero() {
       </div>
 
       {/* Content Container */}
-      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      <div className="full mx-auto px-4 sm:px-8 lg:px-16 xl:px-24 relative z-10">
         {/* Breadcrumb */}
-        <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-[12px] text-white/70 font-medium mb-2.5">
+        <nav
+          aria-label="Breadcrumb"
+          className="flex items-center gap-2 text-[12px] text-white/70 font-medium mb-2.5"
+        >
           <span className="text-white/60">Beranda</span>
           <span className="text-white/40">/</span>
           <span className="text-white font-semibold">Dashboard Utama</span>
@@ -64,10 +81,11 @@ export function DashboardHero() {
             className="flex flex-col gap-1.5 max-w-2xl"
           >
             <h1 className="text-[26px] sm:text-[28px] font-bold leading-tight text-white tracking-[-0.4px]">
-              Selamat Datang, Andi Pratama
+              Selamat Datang, {userName}
             </h1>
             <p className="text-[13.5px] font-normal leading-[21px] text-white/90">
-              Terus melangkah dalam perjalanan pengembangan kompetensi Anda untuk mendukung transportasi maju Indonesia.
+              Terus melangkah dalam perjalanan pengembangan kompetensi Anda
+              untuk mendukung transportasi maju Indonesia.
             </p>
           </motion.div>
 
@@ -88,7 +106,11 @@ export function DashboardHero() {
                 stroke="currentColor"
                 strokeWidth="2.5"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 4v16m8-8H4"
+                />
               </svg>
               <span>Catat Sesi Baru</span>
             </Link>

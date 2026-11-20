@@ -49,9 +49,11 @@ func TestSessionUsecase_BookSession_Success(t *testing.T) {
 		assert.True(t, len(session.Token) > 5)
 		return nil
 	})
+	mockSessionRepo.EXPECT().AddPeserta(ctx, gomock.Any()).Return(nil).AnyTimes()
+	mockSessionRepo.EXPECT().AddPertemuan(ctx, gomock.Any()).Return(nil).AnyTimes()
 
 	input := sessiondomain.BookSessionInput{
-		PractitionerID: practitionerID,
+		PractitionerID: &practitionerID,
 		Type:           sessiondomain.TypeCoaching,
 		Title:          "Akselerasi Kinerja 2026",
 		Topic:          "Kinerja",
@@ -77,8 +79,9 @@ func TestSessionUsecase_BookSession_ClientNotFound(t *testing.T) {
 
 	mockUserRepo.EXPECT().FindByID(ctx, clientID).Return(nil, sharederrors.ErrUserNotFound)
 
+	testPractitionerID := uuid.New()
 	input := sessiondomain.BookSessionInput{
-		PractitionerID: uuid.New(),
+		PractitionerID: &testPractitionerID,
 		Type:           sessiondomain.TypeCoaching,
 		Title:          "Akselerasi Kinerja",
 	}
@@ -108,7 +111,7 @@ func TestSessionUsecase_BookSession_PractitionerRoleMismatch(t *testing.T) {
 	mockUserRepo.EXPECT().FindByID(ctx, practitionerID).Return(practitioner, nil)
 
 	input := sessiondomain.BookSessionInput{
-		PractitionerID: practitionerID,
+		PractitionerID: &practitionerID,
 		Type:           sessiondomain.TypeMentoring, // requires RoleMentor
 		Title:          "Mentoring Karier",
 	}
@@ -139,6 +142,7 @@ func TestSessionUsecase_GetSession_Forbidden(t *testing.T) {
 	}
 
 	mockSessionRepo.EXPECT().FindByID(ctx, sessionID).Return(session, nil)
+	mockUserRepo.EXPECT().FindByID(ctx, unrelatedUserID).Return(&userdomain.User{ID: unrelatedUserID, NIP: "99999999"}, nil)
 
 	// An unrelated client attempts to view the session
 	_, err := usecase.GetSession(ctx, sessionID, unrelatedUserID, userdomain.RoleClient)
@@ -161,6 +165,7 @@ func TestSessionUsecase_AddMeeting_NormalizesMeetingType(t *testing.T) {
 	session := &sessiondomain.Session{
 		ID:             sessionID,
 		PractitionerID: coachID,
+		Status:         sessiondomain.StatusConfirmed,
 	}
 
 	mockSessionRepo.EXPECT().FindByID(ctx, sessionID).Return(session, nil)
@@ -171,6 +176,7 @@ func TestSessionUsecase_AddMeeting_NormalizesMeetingType(t *testing.T) {
 		assert.Equal(t, "draft", m.Status)
 		return nil
 	})
+	mockSessionRepo.EXPECT().AddPertemuan(ctx, gomock.Any()).Return(nil).AnyTimes()
 
 	input := sessiondomain.AddMeetingInput{
 		Title:       "Pertemuan Tatap Muka",
@@ -183,7 +189,7 @@ func TestSessionUsecase_AddMeeting_NormalizesMeetingType(t *testing.T) {
 	assert.Equal(t, "Luring", meeting.MeetingType)
 }
 
-func TestSessionUsecase_UpdateStatus_Success(t *testing.T) {
+func TestSessionUsecase_AddMeeting_RequiresSessionVerified(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -195,6 +201,7 @@ func TestSessionUsecase_UpdateStatus_Success(t *testing.T) {
 	sessionID := uuid.New()
 	coachID := uuid.New()
 
+	// Session with status 'pending' (not yet verified by atasan)
 	session := &sessiondomain.Session{
 		ID:             sessionID,
 		PractitionerID: coachID,
@@ -202,6 +209,39 @@ func TestSessionUsecase_UpdateStatus_Success(t *testing.T) {
 	}
 
 	mockSessionRepo.EXPECT().FindByID(ctx, sessionID).Return(session, nil)
+
+	input := sessiondomain.AddMeetingInput{
+		Title:       "Pertemuan 1",
+		MeetingType: "Luring",
+	}
+
+	meeting, err := usecase.AddMeeting(ctx, sessionID, coachID, userdomain.RoleCoach, input)
+	require.Error(t, err)
+	require.Nil(t, meeting)
+	assert.ErrorIs(t, err, sharederrors.ErrSessionNotVerified)
+}
+
+func TestSessionUsecase_UpdateStatus_Success(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockSessionRepo := mocks.NewMockSessionRepository(ctrl)
+	mockUserRepo := mocks.NewMockUserRepository(ctrl)
+	usecase := sessionusecase.NewSessionUsecase(mockSessionRepo, mockUserRepo, nil)
+
+	ctx := context.Background()
+	sessionID := uuid.New()
+	atasanID := uuid.New()
+	atasanNIP := "198406202006041004"
+
+	session := &sessiondomain.Session{
+		ID:        sessionID,
+		AtasanNIP: atasanNIP,
+		Status:    sessiondomain.StatusPending,
+	}
+
+	mockSessionRepo.EXPECT().FindByID(ctx, sessionID).Return(session, nil)
+	mockUserRepo.EXPECT().FindByID(ctx, atasanID).Return(&userdomain.User{ID: atasanID, NIP: atasanNIP}, nil)
 	mockSessionRepo.EXPECT().UpdateStatus(ctx, sessionID, sessiondomain.StatusConfirmed, "Disetujui").Return(nil)
 
 	input := sessiondomain.UpdateSessionStatusInput{
@@ -209,8 +249,41 @@ func TestSessionUsecase_UpdateStatus_Success(t *testing.T) {
 		Notes:  "Disetujui",
 	}
 
-	err := usecase.UpdateStatus(ctx, sessionID, coachID, userdomain.RoleCoach, input)
+	err := usecase.UpdateStatus(ctx, sessionID, atasanID, userdomain.RoleClient, input)
 	require.NoError(t, err)
+}
+
+func TestSessionUsecase_UpdateStatus_ForbiddenForNonAtasan(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockSessionRepo := mocks.NewMockSessionRepository(ctrl)
+	mockUserRepo := mocks.NewMockUserRepository(ctrl)
+	usecase := sessionusecase.NewSessionUsecase(mockSessionRepo, mockUserRepo, nil)
+
+	ctx := context.Background()
+	sessionID := uuid.New()
+	clientID := uuid.New()
+	clientNIP := "199403302025052001"
+
+	session := &sessiondomain.Session{
+		ID:        sessionID,
+		ClientID:  clientID,
+		AtasanNIP: "198406202006041004",
+		Status:    sessiondomain.StatusPending,
+	}
+
+	mockSessionRepo.EXPECT().FindByID(ctx, sessionID).Return(session, nil)
+	mockUserRepo.EXPECT().FindByID(ctx, clientID).Return(&userdomain.User{ID: clientID, NIP: clientNIP}, nil)
+
+	input := sessiondomain.UpdateSessionStatusInput{
+		Status: sessiondomain.StatusConfirmed,
+		Notes:  "Mencoba menyetujui sendiri",
+	}
+
+	err := usecase.UpdateStatus(ctx, sessionID, clientID, userdomain.RoleClient, input)
+	require.Error(t, err)
+	assert.Equal(t, sharederrors.ErrForbidden, err)
 }
 
 func TestSessionUsecase_ResendNotification_Success(t *testing.T) {
@@ -249,14 +322,11 @@ func TestSessionUsecase_ListUserSessions_ClientAndCoach(t *testing.T) {
 
 	ctx := context.Background()
 	userID := uuid.New()
+	userNIP := "198406202006041004"
 
-	mockSessionRepo.EXPECT().FindByClientID(ctx, userID).Return([]sessiondomain.Session{{Title: "Client Session"}}, nil)
-	sessionsClient, err := usecase.ListUserSessions(ctx, userID, userdomain.RoleClient)
+	mockUserRepo.EXPECT().FindByID(ctx, userID).Return(&userdomain.User{ID: userID, NIP: userNIP}, nil)
+	mockSessionRepo.EXPECT().FindByInvolvement(ctx, userID, userNIP).Return([]sessiondomain.Session{{Title: "Involved Session"}}, nil)
+	sessions, err := usecase.ListUserSessions(ctx, userID, userdomain.RoleClient)
 	require.NoError(t, err)
-	assert.Len(t, sessionsClient, 1)
-
-	mockSessionRepo.EXPECT().FindByPractitionerID(ctx, userID).Return([]sessiondomain.Session{{Title: "Coach Session"}}, nil)
-	sessionsCoach, err := usecase.ListUserSessions(ctx, userID, userdomain.RoleCoach)
-	require.NoError(t, err)
-	assert.Len(t, sessionsCoach, 1)
+	assert.Len(t, sessions, 1)
 }

@@ -4,13 +4,21 @@ interface SertifikatMetricsProps {
   totalCertificates: number;
   totalJp: number;
   onRunSampleVerification: () => void;
+  breakdownText?: string;
+  targetJp?: number;
 }
 
 export default function SertifikatMetrics({
   totalCertificates,
   totalJp,
   onRunSampleVerification,
+  breakdownText,
+  targetJp = 20,
 }: SertifikatMetricsProps) {
+  const percentAchieved = Math.min(
+    100,
+    Math.round((totalJp / (targetJp || 1)) * 100)
+  );
   return (
     <div className="flex flex-col gap-6">
       {/* 
@@ -31,7 +39,12 @@ export default function SertifikatMetrics({
               </span>
               <span className="text-[12px] font-semibold text-slate-500">Dokumen</span>
             </div>
-            <span className="text-[11px] text-slate-500 mt-1">1 Kumulatif + 5 Sesi Selesai</span>
+            <span className="text-[11px] text-slate-500 mt-1">
+              {breakdownText ||
+                (totalCertificates > 0
+                  ? `${totalCertificates} Dokumen Tervalidasi`
+                  : "Belum Ada Dokumen")}
+            </span>
           </div>
           <div className="size-10 rounded-xl bg-blue-50 text-blue-700 border border-blue-100 flex items-center justify-center shrink-0">
             <svg
@@ -60,10 +73,12 @@ export default function SertifikatMetrics({
               <span className="text-[28px] font-extrabold text-[#0f172a] leading-none tracking-tight">
                 {totalJp}
               </span>
-              <span className="text-[12px] font-semibold text-slate-500">/ 20 JP</span>
+              <span className="text-[12px] font-semibold text-slate-500">
+                / {targetJp} JP
+              </span>
             </div>
             <span className="text-[11px] font-medium text-emerald-700 mt-1">
-              70% Target Pengembangan Terpenuhi
+              {percentAchieved}% Target Pengembangan Terpenuhi
             </span>
           </div>
           <div className="size-10 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-100 flex items-center justify-center shrink-0">
@@ -126,7 +141,7 @@ export default function SertifikatMetrics({
                 Tersinkron
               </span>
             </div>
-            <span className="text-[11px] text-slate-500 mt-1.5">Terhubung otomatis ke SKP 2024</span>
+            <span className="text-[11px] text-slate-500 mt-1.5">Terhubung otomatis ke SKP {new Date().getFullYear()}</span>
           </div>
           <div className="size-10 rounded-xl bg-amber-50 text-amber-700 border border-amber-100 flex items-center justify-center shrink-0">
             <svg

@@ -8,6 +8,7 @@ import { SesiToast } from "@/components/sesi";
 import {
   SesiDetailHero,
   SesiHeaderCard,
+  PesertaSesiCard,
   MeetingListSection,
   SesiDetailSidebar,
   MeetingDetailModal,
@@ -42,13 +43,16 @@ export default function SesiDetailPage() {
   const [showFinishModal, setShowFinishModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showAddMeetingModal, setShowAddMeetingModal] = useState(false);
-  const [selectedMeetingDetail, setSelectedMeetingDetail] = useState<Meeting | null>(null);
+  const [selectedMeetingDetail, setSelectedMeetingDetail] =
+    useState<Meeting | null>(null);
   const [, setIsSubmittingMeeting] = useState(false);
 
   // New meeting form state
   const [newMeetingTitle, setNewMeetingTitle] = useState("");
   const [newMeetingDate, setNewMeetingDate] = useState("");
-  const [newMeetingType, setNewMeetingType] = useState<"Luring" | "Daring" | "Hybrid">("Luring");
+  const [newMeetingType, setNewMeetingType] = useState<
+    "Luring" | "Daring" | "Hybrid"
+  >("Luring");
   const [newMeetingLocation, setNewMeetingLocation] = useState("");
   const [newMeetingSummary, setNewMeetingSummary] = useState("");
 
@@ -78,14 +82,37 @@ export default function SesiDetailPage() {
 
       const fullSession = await fetchSession(target.id);
       setSession(fullSession);
-      if (fullSession.meetings && fullSession.meetings.length > 0) {
+      if (fullSession.pertemuan_list && fullSession.pertemuan_list.length > 0) {
+        setMeetings(
+          fullSession.pertemuan_list.map((p) => {
+            const firstNote = p.catatan_list?.[0];
+            const isDone =
+              p.status === "completed" ||
+              p.status === "lengkap" ||
+              Boolean(firstNote);
+            return {
+              id: p.id,
+              number: p.meeting_number,
+              title: p.title,
+              dateStr: p.scheduled_date || "Belum dijadwalkan",
+              status: isDone ? ("lengkap" as const) : ("draft" as const),
+              statusLabel: isDone ? "Lengkap" : "Draft — belum lengkap",
+              type:
+                (p.meeting_type as "Luring" | "Daring" | "Hybrid") || "Luring",
+              location: p.location || "",
+              jpCollected: firstNote?.jp_collected || (isDone ? 2 : undefined),
+              topicSummary: firstNote?.pembahasan || undefined,
+            };
+          }),
+        );
+      } else if (fullSession.meetings && fullSession.meetings.length > 0) {
         setMeetings(fullSession.meetings.map(mapApiMeetingToMeeting));
       } else {
         setMeetings([]);
       }
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Gagal memuat detail sesi."
+        err instanceof Error ? err.message : "Gagal memuat detail sesi.",
       );
     } finally {
       setLoading(false);
@@ -110,7 +137,9 @@ export default function SesiDetailPage() {
     if (!sessionId) return;
     try {
       await resendNotification(sessionId);
-      showToast("Notifikasi pengingat sesi berhasil dikirimkan ke Coach/Mentor!");
+      showToast(
+        "Notifikasi pengingat sesi berhasil dikirimkan ke Coach/Mentor!",
+      );
     } catch {
       showToast("Gagal mengirim notifikasi. Silakan coba lagi.");
     }
@@ -120,11 +149,15 @@ export default function SesiDetailPage() {
     if (!sessionId) return;
     try {
       await deleteMeeting(sessionId, String(meetingId));
-      setMeetings((prev) => prev.filter((m) => String(m.id) !== String(meetingId)));
+      setMeetings((prev) =>
+        prev.filter((m) => String(m.id) !== String(meetingId)),
+      );
       showToast("Draf pertemuan berhasil dihapus.");
     } catch (err) {
       showToast(
-        err instanceof Error ? `Gagal menghapus: ${err.message}` : "Gagal menghapus draf."
+        err instanceof Error
+          ? `Gagal menghapus: ${err.message}`
+          : "Gagal menghapus draf.",
       );
     }
   };
@@ -158,7 +191,9 @@ export default function SesiDetailPage() {
       loadDefaultSession();
     } catch (err) {
       showToast(
-        err instanceof Error ? `Gagal menambah pertemuan: ${err.message}` : "Gagal menyimpan pertemuan."
+        err instanceof Error
+          ? `Gagal menambah pertemuan: ${err.message}`
+          : "Gagal menyimpan pertemuan.",
       );
     } finally {
       setIsSubmittingMeeting(false);
@@ -168,7 +203,11 @@ export default function SesiDetailPage() {
   const handleFinishSession = async () => {
     if (!sessionId) return;
     try {
-      await updateSessionStatus(sessionId, "completed", "Sesi diselesaikan oleh peserta");
+      await updateSessionStatus(
+        sessionId,
+        "completed",
+        "Sesi diselesaikan oleh peserta",
+      );
       setShowFinishModal(false);
       showToast("Sesi berhasil ditandai selesai! Terima kasih.");
       loadDefaultSession();
@@ -190,19 +229,25 @@ export default function SesiDetailPage() {
   };
 
   // Metrics
-  const completedMeetings = meetings.filter((m) => m.status === "lengkap").length;
+  const completedMeetings = meetings.filter(
+    (m) => m.status === "lengkap",
+  ).length;
   const totalMeetings = meetings.length;
   const collectedJp = session?.current_jp ?? completedMeetings * 2;
   const targetJp = session?.target_jp ?? 6;
-  const progressPercent = Math.min(Math.round((collectedJp / targetJp) * 100), 100);
+  const progressPercent = Math.min(
+    Math.round((collectedJp / targetJp) * 100),
+    100,
+  );
 
-  const practitionerName = session?.practitioner?.full_name || "Rudi Santoso, M.M.";
+  const practitionerName =
+    session?.practitioner?.full_name || "Rudi Santoso, M.M.";
   const practitionerRole =
     session?.type === "mentoring"
       ? "Mentor"
       : session?.type === "counseling"
-      ? "Konselor"
-      : "Coach";
+        ? "Konselor"
+        : "Coach";
   const practitionerInitials = practitionerName
     .split(" ")
     .filter(Boolean)
@@ -237,11 +282,23 @@ export default function SesiDetailPage() {
 
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-[10px] p-4 flex items-start gap-3 mb-6">
-            <svg className="size-5 text-red-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            <svg
+              className="size-5 text-red-500 shrink-0 mt-0.5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              />
             </svg>
             <div className="flex flex-col gap-1">
-              <p className="text-sm font-semibold text-red-700">Gagal memuat detail sesi</p>
+              <p className="text-sm font-semibold text-red-700">
+                Gagal memuat detail sesi
+              </p>
               <p className="text-xs text-red-600">{error}</p>
               <button
                 type="button"
@@ -264,23 +321,31 @@ export default function SesiDetailPage() {
                 completedMeetings={completedMeetings}
                 totalMeetings={totalMeetings}
                 progressPercent={progressPercent}
-                title={session?.title || session?.topic || "Penguatan Kepemimpinan Pelayanan Publik"}
-                category={session?.type === "mentoring" ? "Mentoring" : "Coaching"}
+                title={
+                  session?.title ||
+                  session?.topic ||
+                  "Penguatan Kepemimpinan Pelayanan Publik"
+                }
+                category={
+                  session?.type === "mentoring" ? "Mentoring" : "Coaching"
+                }
                 status={session?.status || "confirmed"}
                 statusLabel={
                   session?.status === "completed"
                     ? "Selesai"
                     : session?.status === "rejected"
-                    ? "Dikembalikan"
-                    : session?.status === "pending"
-                    ? "Menunggu Konfirmasi"
-                    : "Berlangsung"
+                      ? "Dikembalikan"
+                      : session?.status === "pending"
+                        ? "Menunggu Konfirmasi"
+                        : "Berlangsung"
                 }
                 practitionerName={practitionerName}
                 practitionerRole={practitionerRole}
                 startDate={startDateFormatted}
               />
+              <PesertaSesiCard session={session} />
               <MeetingListSection
+                sessionId={session?.id}
                 meetings={meetings}
                 filledMeetings={completedMeetings}
                 totalMeetings={totalMeetings}

@@ -1,18 +1,53 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
+import { JpProgressSummary, calculateJpSummary } from "@/lib/jpCalculations";
+import { fetchSessions, ApiSession } from "@/lib/api";
 
 interface DashboardExecutiveJpCardProps {
   showJpBreakdown: boolean;
   onToggleJpBreakdown: () => void;
+  sessions?: any[];
+  jpSummary?: JpProgressSummary;
 }
 
 export function DashboardExecutiveJpCard({
   showJpBreakdown,
   onToggleJpBreakdown,
+  sessions: initialSessions,
+  jpSummary: initialSummary,
 }: DashboardExecutiveJpCardProps) {
+  const [loadedSessions, setLoadedSessions] = useState<any[]>(initialSessions || []);
+
+  useEffect(() => {
+    if (initialSessions && initialSessions.length > 0) {
+      setLoadedSessions(initialSessions);
+      return;
+    }
+
+    // Auto-fetch real sessions if not provided
+    let isMounted = true;
+    async function loadData() {
+      try {
+        const data = await fetchSessions();
+        if (isMounted && data && Array.isArray(data)) {
+          setLoadedSessions(data);
+        }
+      } catch (err) {
+        // Silently handle if unauthenticated or error; state remains clean
+      }
+    }
+    loadData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [initialSessions]);
+
+  const summary = initialSummary || calculateJpSummary(loadedSessions);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
@@ -50,44 +85,69 @@ export function DashboardExecutiveJpCard({
           </button>
         </div>
 
-        {/* Numbers: 14 / 20 JP with 70% Badge */}
+        {/* Real Numbers: Capaian / Target JP with Percentage Badge */}
         <div className="flex items-baseline gap-2">
           <span className="text-[34px] font-extrabold text-[#0f172a] leading-none tracking-[-1px]">
-            14
+            {summary.totalJp}
           </span>
           <span className="text-[22px] text-[#94a3b8] font-light">/</span>
-          <span className="text-[20px] font-semibold text-[#64748b]">20</span>
+          <span className="text-[20px] font-semibold text-[#64748b]">{summary.targetJp}</span>
           <span className="text-[13.5px] font-semibold text-[#64748b] ml-0.5">JP</span>
-          <span className="ml-2 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 font-bold text-[11.5px] border border-emerald-200/80 inline-flex items-center gap-1">
-            <svg className="size-3 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-            </svg>
-            <span>70% Tercapai</span>
+          <span
+            className={`ml-2 px-2.5 py-0.5 rounded-full font-bold text-[11.5px] border inline-flex items-center gap-1 ${
+              summary.percentage >= 100
+                ? "bg-emerald-50 text-emerald-800 border-emerald-300"
+                : summary.percentage > 0
+                ? "bg-blue-50 text-blue-800 border-blue-200/80"
+                : "bg-slate-50 text-slate-600 border-slate-200"
+            }`}
+          >
+            {summary.percentage > 0 ? (
+              <svg className="size-3 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            ) : null}
+            <span>{summary.percentage}% Tercapai</span>
           </span>
         </div>
 
-        {/* Dual Segments Progress Bar */}
+        {/* Dynamic Segments Progress Bar */}
         <div
           className="h-2.5 w-full bg-[#eef1f5] rounded-full overflow-hidden flex cursor-pointer group"
           onClick={onToggleJpBreakdown}
           title="Klik untuk melihat rincian Coaching dan Mentoring"
         >
-          <motion.div
-            className="h-full bg-[#0a2540] group-hover:brightness-110"
-            initial={{ width: 0 }}
-            animate={{ width: "30%" }}
-            transition={{ duration: 0.9, delay: 0.15, ease: "easeOut" }}
-          />
-          <motion.div
-            className="h-full bg-[#10b981] group-hover:brightness-110"
-            initial={{ width: 0 }}
-            animate={{ width: "40%" }}
-            transition={{ duration: 0.9, delay: 0.35, ease: "easeOut" }}
-          />
+          {summary.coachingWidth > 0 && (
+            <motion.div
+              className="h-full bg-[#0a2540] group-hover:brightness-110"
+              initial={{ width: 0 }}
+              animate={{ width: `${summary.coachingWidth}%` }}
+              transition={{ duration: 0.9, delay: 0.15, ease: "easeOut" }}
+              title={`Coaching: ${summary.coachingJp} JP`}
+            />
+          )}
+          {summary.mentoringWidth > 0 && (
+            <motion.div
+              className="h-full bg-[#10b981] group-hover:brightness-110"
+              initial={{ width: 0 }}
+              animate={{ width: `${summary.mentoringWidth}%` }}
+              transition={{ duration: 0.9, delay: 0.35, ease: "easeOut" }}
+              title={`Mentoring: ${summary.mentoringJp} JP`}
+            />
+          )}
+          {summary.counselingWidth > 0 && (
+            <motion.div
+              className="h-full bg-[#6366f1] group-hover:brightness-110"
+              initial={{ width: 0 }}
+              animate={{ width: `${summary.counselingWidth}%` }}
+              transition={{ duration: 0.9, delay: 0.45, ease: "easeOut" }}
+              title={`Konseling: ${summary.counselingJp} JP`}
+            />
+          )}
         </div>
 
         {/* Interactive Breakdown Accordion */}
-        <AnimatePresence mode="wait">
+        <AnimatePresence>
           {showJpBreakdown ? (
             <motion.div
               key="breakdown-open"
@@ -101,24 +161,34 @@ export function DashboardExecutiveJpCard({
                 <span className="size-3 rounded-full bg-[#0a2540] shrink-0" />
                 <div>
                   <span className="text-slate-500 block text-[11px]">Coaching:</span>
-                  <strong className="text-slate-900 font-bold text-[13px]">6 JP</strong>
-                  <span className="text-slate-400 text-[10px] ml-1">(target 10 JP)</span>
+                  <strong className="text-slate-900 font-bold text-[13px]">{summary.coachingJp} JP</strong>
+                  <span className="text-slate-400 text-[10px] ml-1">(target {summary.coachingTarget} JP)</span>
                 </div>
               </div>
               <div className="flex items-center gap-2.5 bg-white p-2 rounded-md border border-slate-200/80 shadow-2xs">
                 <span className="size-3 rounded-full bg-[#10b981] shrink-0" />
                 <div>
                   <span className="text-slate-500 block text-[11px]">Mentoring:</span>
-                  <strong className="text-slate-900 font-bold text-[13px]">8 JP</strong>
-                  <span className="text-slate-400 text-[10px] ml-1">(target 10 JP)</span>
+                  <strong className="text-slate-900 font-bold text-[13px]">{summary.mentoringJp} JP</strong>
+                  <span className="text-slate-400 text-[10px] ml-1">(target {summary.mentoringTarget} JP)</span>
                 </div>
               </div>
               <div className="flex items-center gap-2.5 bg-emerald-50/60 p-2 rounded-md border border-emerald-200/80 shadow-2xs">
-                <span className="size-3 rounded-full bg-emerald-500 shrink-0" />
+                <span
+                  className={`size-3 rounded-full shrink-0 ${
+                    summary.sisaJp === 0 ? "bg-emerald-600" : "bg-emerald-500"
+                  }`}
+                />
                 <div>
                   <span className="text-emerald-800 block text-[11px] font-medium">Sisa Target:</span>
-                  <strong className="text-emerald-900 font-bold text-[13px]">6 JP lagi</strong>
-                  <span className="text-emerald-700 text-[10px] ml-1">(menuju 100%)</span>
+                  {summary.sisaJp > 0 ? (
+                    <>
+                      <strong className="text-emerald-900 font-bold text-[13px]">{summary.sisaJp} JP lagi</strong>
+                      <span className="text-emerald-700 text-[10px] ml-1">(menuju 100%)</span>
+                    </>
+                  ) : (
+                    <strong className="text-emerald-900 font-bold text-[13px]">Target Terpenuhi!</strong>
+                  )}
                 </div>
               </div>
             </motion.div>
@@ -140,8 +210,17 @@ export function DashboardExecutiveJpCard({
               >
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
               </svg>
-              <span className="font-semibold text-[#067647]">Butuh 6 JP lagi</span>
-              <span className="text-[#64748b]">untuk memenuhi target pengembangan kompetensi tahunan.</span>
+              {summary.sisaJp > 0 ? (
+                <>
+                  <span className="font-semibold text-[#067647]">Butuh {summary.sisaJp} JP lagi</span>
+                  <span className="text-[#64748b]">untuk memenuhi target pengembangan kompetensi tahunan ({summary.targetJp} JP).</span>
+                </>
+              ) : (
+                <>
+                  <span className="font-semibold text-[#067647]">Target {summary.targetJp} JP Telah Terpenuhi!</span>
+                  <span className="text-[#64748b]">Seluruh target pengembangan kompetensi tahunan telah tercapai.</span>
+                </>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
@@ -150,7 +229,7 @@ export function DashboardExecutiveJpCard({
       {/* Middle Vertical Divider */}
       <div className="w-px bg-[#eef1f5] self-stretch hidden md:block" />
 
-      {/* Right Action Counters */}
+      {/* Right Action Counters with Real Counts */}
       <div className="w-full md:w-[290px] shrink-0 flex flex-col sm:flex-row md:flex-col gap-2.5">
         {/* Link to Sesi Perlu Tindakan */}
         <motion.div whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }} className="flex-1">
@@ -177,11 +256,13 @@ export function DashboardExecutiveJpCard({
             <div className="flex-1 min-w-0 flex flex-col">
               <div className="flex items-center gap-1.5">
                 <span className="text-[16px] font-bold text-[#0f172a] leading-none">
-                  2
+                  {summary.countPerluTindakan}
                 </span>
                 <span className="text-[12px] font-bold text-[#92400e]">Perlu tindakan</span>
               </div>
-              <span className="text-[11.5px] text-[#64748b] mt-0.5">1 konfirmasi · 1 revisi</span>
+              <span className="text-[11.5px] text-[#64748b] mt-0.5 truncate">
+                {summary.perluTindakanSubtitle}
+              </span>
             </div>
             <span className="text-[11.5px] text-[#92400e] font-bold opacity-0 group-hover:opacity-100 transition-opacity">
               Lihat →
@@ -214,11 +295,13 @@ export function DashboardExecutiveJpCard({
             <div className="flex-1 min-w-0 flex flex-col">
               <div className="flex items-center gap-1.5">
                 <span className="text-[16px] font-bold text-[#0f172a] leading-none">
-                  1
+                  {summary.countBerlangsung}
                 </span>
                 <span className="text-[12px] font-bold text-[#067647]">Sedang berlangsung</span>
               </div>
-              <span className="text-[11.5px] text-[#64748b] mt-0.5">Pertemuan 2 berikutnya</span>
+              <span className="text-[11.5px] text-[#64748b] mt-0.5 truncate">
+                {summary.berlangsungSubtitle}
+              </span>
             </div>
             <span className="text-[11.5px] text-[#067647] font-bold opacity-0 group-hover:opacity-100 transition-opacity">
               Lihat →

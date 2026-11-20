@@ -32,7 +32,7 @@ type RegisterInput struct {
 	Email    string          `json:"email" validate:"required,email"`
 	Password string          `json:"password" validate:"required,min=8,max=64"`
 	FullName string          `json:"full_name" validate:"required,min=2,max=100"`
-	Role     userdomain.Role `json:"role" validate:"required,oneof=admin coach mentor counselor client"`
+	Role     userdomain.Role `json:"role" validate:"required,oneof=super_admin admin pegawai client coach mentor counselor"`
 	Phone    string          `json:"phone" validate:"omitempty,e164"`
 }
 

@@ -174,7 +174,7 @@ func TestHTTPHandler_BookSession_Success(t *testing.T) {
 	router := setupSessionTestRouter(handler, userID, userdomain.RoleClient)
 
 	input := sessiondomain.BookSessionInput{
-		PractitionerID:  practitionerID,
+		PractitionerID:  &practitionerID,
 		Type:            sessiondomain.TypeCoaching,
 		Title:           "Coaching Efektivitas Kerja",
 		Topic:           "Manajemen Waktu",

@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 
 	"github.com/caarlos0/env/v11"
@@ -21,6 +22,7 @@ type Config struct {
 	JWT      JWTConfig
 	RateLimit RateLimitConfig
 	SSO      SSOConfig
+	SIK      SIKConfig
 }
 
 type AppConfig struct {
@@ -103,8 +105,8 @@ type MinIOConfig struct {
 
 type JWTConfig struct {
 	SecretKey            string        `env:"JWT_SECRET_KEY,required"`
-	AccessTokenDuration  time.Duration `env:"JWT_ACCESS_DURATION" envDefault:"15m"`
-	RefreshTokenDuration time.Duration `env:"JWT_REFRESH_DURATION" envDefault:"168h"` // 7 days
+	AccessTokenDuration  time.Duration `env:"JWT_ACCESS_DURATION" envDefault:"720h"`
+	RefreshTokenDuration time.Duration `env:"JWT_REFRESH_DURATION" envDefault:"720h"`
 	Issuer               string        `env:"JWT_ISSUER" envDefault:"cmc-auth-service"`
 }
 
@@ -128,6 +130,12 @@ type SSOConfig struct {
 	FrontendURL       string `env:"FRONTEND_URL" envDefault:"http://localhost:3000"`
 }
 
+type SIKConfig struct {
+	BaseURL  string `env:"SIK_BASE_URL" envDefault:"https://sik.dephub.go.id:443/api/index.php/soap_services/sik_api"`
+	Username string `env:"SIK_USERNAME" envDefault:"N3wPres3nsiApp5"`
+	Password string `env:"SIK_PASSWORD" envDefault:"CBlv1iA#VZa4tm6F895W3IcP7Qw$HLbfxjEkR@SKzMJTGUugqo"`
+}
+
 // Load loads and parses environment variables with strict validation.
 func Load() (*Config, error) {
 	// Attempt to load .env file if it exists, ignore if not present (e.g. in containerized env)
@@ -139,6 +147,10 @@ func Load() (*Config, error) {
 	if err := env.Parse(cfg); err != nil {
 		return nil, fmt.Errorf("failed to parse config from environment: %w", err)
 	}
+
+	cfg.SIK.Username = strings.Trim(cfg.SIK.Username, "'\"")
+	cfg.SIK.Password = strings.Trim(cfg.SIK.Password, "'\"")
+	cfg.SIK.BaseURL = strings.Trim(cfg.SIK.BaseURL, "'\"")
 
 	return cfg, nil
 }

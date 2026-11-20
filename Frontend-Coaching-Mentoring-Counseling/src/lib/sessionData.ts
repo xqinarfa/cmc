@@ -21,6 +21,8 @@ export interface SessionItem {
   alertAuthor?: string;
   section: "perlu_tindakan" | "berlangsung" | "selesai";
   progressNote?: string;
+  sessionFormat?: "1-on-1" | "1-on-group";
+  pesertaCount?: number;
 }
 
 export const SESSIONS_DATA: SessionItem[] = [
@@ -192,6 +194,20 @@ export const ACCREDITED_COACHES: CoachItem[] = [
   },
 ];
 
+export interface ParticipantMeetingNote {
+  pesertaId?: string;
+  nip: string;
+  nama: string;
+  role?: string;
+  isCompleted: boolean;
+  noteId?: string;
+  jpCollected?: number;
+  pembahasan?: string;
+  tujuan?: string;
+  rencanaTindakLanjut?: string;
+  umpanBalik?: string;
+}
+
 export interface Meeting {
   id: number | string;
   number: number;
@@ -210,6 +226,10 @@ export interface Meeting {
   topicSummary?: string;
   feedback?: string;
   nextSteps?: string;
+  participantNotes?: ParticipantMeetingNote[];
+  completedCount?: number;
+  totalParticipants?: number;
+  currentUserCompleted?: boolean;
 }
 
 export const INITIAL_MEETINGS: Meeting[] = [

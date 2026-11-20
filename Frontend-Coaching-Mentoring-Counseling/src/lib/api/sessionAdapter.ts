@@ -117,11 +117,13 @@ export function mapApiSessionToSessionItem(s: ApiSession): SessionItem {
     token: s.token,
     currentJp: s.current_jp ?? 0,
     targetJp: s.target_jp ?? 0,
-    alertType: (s.alert_type as "amber" | "red") ?? undefined,
-    alertText: s.alert_text ?? undefined,
+    alertType: (s.alert_type as "amber" | "red") ?? (s.status === "pending" ? "amber" : undefined),
+    alertText: s.alert_text ?? (s.status === "pending" ? "Menunggu verifikasi dan konfirmasi pelaksanaan sesi." : undefined),
     alertAuthor: s.alert_author ?? undefined,
     section: getSection(s.status),
     progressNote: s.progress_note ?? undefined,
+    sessionFormat: (s.session_format as "1-on-1" | "1-on-group") || "1-on-1",
+    pesertaCount: s.peserta_list?.length || (s.session_format === "1-on-group" ? 2 : 1),
   };
 }
 

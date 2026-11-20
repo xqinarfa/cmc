@@ -64,6 +64,8 @@ func HandleDomainError(c *gin.Context, err error) {
 		Error(c, http.StatusNotFound, "SESSION_NOT_FOUND", "Session not found", nil)
 	case errors.Is(err, sharederrors.ErrPractitionerNotFound):
 		Error(c, http.StatusBadRequest, "PRACTITIONER_NOT_FOUND", "Selected practitioner does not exist or has invalid role", nil)
+	case errors.Is(err, sharederrors.ErrPegawaiNotFound):
+		Error(c, http.StatusNotFound, "PEGAWAI_NOT_FOUND", "Pegawai tidak ditemukan di SIK", nil)
 	case errors.Is(err, sharederrors.ErrRateLimitExceeded):
 		Error(c, http.StatusTooManyRequests, "RATE_LIMIT_EXCEEDED", "Rate limit exceeded, please retry later", nil)
 	default:

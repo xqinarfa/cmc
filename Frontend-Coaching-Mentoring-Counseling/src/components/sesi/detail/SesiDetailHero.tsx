@@ -49,15 +49,21 @@ export default function SesiDetailHero() {
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, ease: "easeOut" }}
-        className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10 flex flex-col gap-3"
+        className="w-full mx-auto px-4 sm:px-8 lg:px-16 xl:px-24 relative z-10 flex flex-col gap-3"
       >
         {/* Breadcrumb (Figma Node 835:44) */}
         <nav className="flex items-center gap-2 text-[12.5px] leading-[18.75px]">
-          <Link href="/dashboard" className="text-white/70 hover:text-white transition-colors">
+          <Link
+            href="/dashboard"
+            className="text-white/70 hover:text-white transition-colors"
+          >
             Beranda
           </Link>
           <span className="text-white/40">/</span>
-          <Link href="/sesi" className="text-white/70 hover:text-white transition-colors">
+          <Link
+            href="/sesi"
+            className="text-white/70 hover:text-white transition-colors"
+          >
             Sesi
           </Link>
           <span className="text-white/40">/</span>

@@ -73,5 +73,29 @@ describe("MeetingListSection Component", () => {
     fireEvent.click(detailButtons[0]);
     expect(handleViewDetail).toHaveBeenCalledWith(mockMeetings[0]);
   });
+
+  it("disables add meeting action and shows warning when isVerified is false", () => {
+    const handleOpenAddMeeting = vi.fn();
+
+    render(
+      <MeetingListSection
+        meetings={[]}
+        filledMeetings={0}
+        totalMeetings={0}
+        isVerified={false}
+        sessionStatus="pending"
+        onViewDetail={vi.fn()}
+        onDeleteDraft={vi.fn()}
+        onOpenAddMeeting={handleOpenAddMeeting}
+        onOpenFinishModal={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText(/Menunggu Verifikasi Atasan Langsung/i)).toBeInTheDocument();
+    const lockedBtns = screen.getAllByText(/Tambah Pertemuan \(Terkunci\)/i);
+    expect(lockedBtns.length).toBeGreaterThan(0);
+    fireEvent.click(lockedBtns[0]);
+    expect(handleOpenAddMeeting).not.toHaveBeenCalled();
+  });
 });
 

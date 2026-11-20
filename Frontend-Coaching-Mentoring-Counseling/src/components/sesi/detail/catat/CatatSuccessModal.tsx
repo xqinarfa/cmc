@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface CatatSuccessModalProps {
@@ -7,6 +8,9 @@ interface CatatSuccessModalProps {
   pertemuanKe: number;
   onClose: () => void;
   onBackToDetail: () => void;
+  practitionerName?: string;
+  atasanName?: string;
+  participantName?: string;
 }
 
 export default function CatatSuccessModal({
@@ -14,7 +18,18 @@ export default function CatatSuccessModal({
   pertemuanKe,
   onClose,
   onBackToDetail,
+  practitionerName = "Coach Rudi Santoso, M.M.",
+  atasanName = "Atasan Langsung",
+  participantName,
 }: CatatSuccessModalProps) {
+  useEffect(() => {
+    if (!isOpen) return;
+    const timer = setTimeout(() => {
+      onBackToDetail();
+    }, 3500);
+    return () => clearTimeout(timer);
+  }, [isOpen, onBackToDetail]);
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -45,7 +60,9 @@ export default function CatatSuccessModal({
                 Pertemuan #{pertemuanKe} Berhasil Dicatat!
               </h3>
               <p className="text-xs text-[#64748b] leading-relaxed max-w-[340px]">
-                Catatan pertemuan telah disimpan dan notifikasi verifikasi telah dikirimkan ke Coach Rudi Santoso, M.M. serta Atasan Langsung.
+                {participantName
+                  ? `Catatan pertemuan atas nama ${participantName} telah disimpan dan notifikasi verifikasi telah dikirimkan ke ${practitionerName} serta ${atasanName}.`
+                  : `Catatan pertemuan telah disimpan dan notifikasi verifikasi telah dikirimkan ke ${practitionerName} serta ${atasanName}.`}
               </p>
             </div>
 
@@ -57,7 +74,9 @@ export default function CatatSuccessModal({
                 + 2 JP
               </span>
               <span className="text-[11px] text-emerald-700">
-                Akan tercatat resmi setelah Atasan Langsung memverifikasi.
+                {participantName
+                  ? `Akan tercatat resmi untuk ${participantName} setelah Atasan Langsung memverifikasi`
+                  : "Akan tercatat resmi setelah Atasan Langsung memverifikasi"}
               </span>
             </div>
 

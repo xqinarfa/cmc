@@ -120,6 +120,32 @@ func (mr *MockUserRepositoryMockRecorder) ListByRole(ctx, role interface{}) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListByRole", reflect.TypeOf((*MockUserRepository)(nil).ListByRole), ctx, role)
 }
 
+func (m *MockUserRepository) CountAdminsByUnitKerja(ctx context.Context, unitKerja string) (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CountAdminsByUnitKerja", ctx, unitKerja)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+func (mr *MockUserRepositoryMockRecorder) CountAdminsByUnitKerja(ctx, unitKerja interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountAdminsByUnitKerja", reflect.TypeOf((*MockUserRepository)(nil).CountAdminsByUnitKerja), ctx, unitKerja)
+}
+
+func (m *MockUserRepository) FindRolesByNIPs(ctx context.Context, nips []string) (map[string]userdomain.Role, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindRolesByNIPs", ctx, nips)
+	ret0, _ := ret[0].(map[string]userdomain.Role)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+func (mr *MockUserRepositoryMockRecorder) FindRolesByNIPs(ctx, nips interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindRolesByNIPs", reflect.TypeOf((*MockUserRepository)(nil).FindRolesByNIPs), ctx, nips)
+}
+
 // MockTokenBlacklistRepository
 type MockTokenBlacklistRepository struct {
 	ctrl     *gomock.Controller
@@ -327,6 +353,32 @@ func (mr *MockSessionRepositoryMockRecorder) FindByPractitionerID(ctx, practitio
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByPractitionerID", reflect.TypeOf((*MockSessionRepository)(nil).FindByPractitionerID), ctx, practitionerID)
 }
 
+func (m *MockSessionRepository) FindAll(ctx context.Context) ([]sessiondomain.Session, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindAll", ctx)
+	ret0, _ := ret[0].([]sessiondomain.Session)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+func (mr *MockSessionRepositoryMockRecorder) FindAll(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAll", reflect.TypeOf((*MockSessionRepository)(nil).FindAll), ctx)
+}
+
+func (m *MockSessionRepository) FindByInvolvement(ctx context.Context, userID uuid.UUID, userNIP string) ([]sessiondomain.Session, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindByInvolvement", ctx, userID, userNIP)
+	ret0, _ := ret[0].([]sessiondomain.Session)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+func (mr *MockSessionRepositoryMockRecorder) FindByInvolvement(ctx, userID, userNIP interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByInvolvement", reflect.TypeOf((*MockSessionRepository)(nil).FindByInvolvement), ctx, userID, userNIP)
+}
+
 func (m *MockSessionRepository) UpdateStatus(ctx context.Context, id uuid.UUID, status sessiondomain.SessionStatus, notes string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateStatus", ctx, id, status, notes)
@@ -351,6 +403,31 @@ func (mr *MockSessionRepositoryMockRecorder) AddMeeting(ctx, meeting interface{}
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddMeeting", reflect.TypeOf((*MockSessionRepository)(nil).AddMeeting), ctx, meeting)
 }
 
+func (m *MockSessionRepository) UpdateMeeting(ctx context.Context, meeting *sessiondomain.Meeting) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateMeeting", ctx, meeting)
+	err, _ := ret[0].(error)
+	return err
+}
+
+func (mr *MockSessionRepositoryMockRecorder) UpdateMeeting(ctx, meeting interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateMeeting", reflect.TypeOf((*MockSessionRepository)(nil).UpdateMeeting), ctx, meeting)
+}
+
+func (m *MockSessionRepository) FindMeetingByID(ctx context.Context, sessionID uuid.UUID, meetingID uuid.UUID) (*sessiondomain.Meeting, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindMeetingByID", ctx, sessionID, meetingID)
+	ret0, _ := ret[0].(*sessiondomain.Meeting)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+func (mr *MockSessionRepositoryMockRecorder) FindMeetingByID(ctx, sessionID, meetingID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMeetingByID", reflect.TypeOf((*MockSessionRepository)(nil).FindMeetingByID), ctx, sessionID, meetingID)
+}
+
 func (m *MockSessionRepository) DeleteMeeting(ctx context.Context, sessionID uuid.UUID, meetingID uuid.UUID) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteMeeting", ctx, sessionID, meetingID)
@@ -361,6 +438,131 @@ func (m *MockSessionRepository) DeleteMeeting(ctx context.Context, sessionID uui
 func (mr *MockSessionRepositoryMockRecorder) DeleteMeeting(ctx, sessionID, meetingID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteMeeting", reflect.TypeOf((*MockSessionRepository)(nil).DeleteMeeting), ctx, sessionID, meetingID)
+}
+
+func (m *MockSessionRepository) AddPeserta(ctx context.Context, peserta *sessiondomain.SessionPeserta) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddPeserta", ctx, peserta)
+	err, _ := ret[0].(error)
+	return err
+}
+
+func (mr *MockSessionRepositoryMockRecorder) AddPeserta(ctx, peserta interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddPeserta", reflect.TypeOf((*MockSessionRepository)(nil).AddPeserta), ctx, peserta)
+}
+
+func (m *MockSessionRepository) ListPeserta(ctx context.Context, sessionID uuid.UUID) ([]sessiondomain.SessionPeserta, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListPeserta", ctx, sessionID)
+	ret0, _ := ret[0].([]sessiondomain.SessionPeserta)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+func (mr *MockSessionRepositoryMockRecorder) ListPeserta(ctx, sessionID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListPeserta", reflect.TypeOf((*MockSessionRepository)(nil).ListPeserta), ctx, sessionID)
+}
+
+func (m *MockSessionRepository) DeletePeserta(ctx context.Context, sessionID uuid.UUID, pesertaID uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeletePeserta", ctx, sessionID, pesertaID)
+	err, _ := ret[0].(error)
+	return err
+}
+
+func (mr *MockSessionRepositoryMockRecorder) DeletePeserta(ctx, sessionID, pesertaID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePeserta", reflect.TypeOf((*MockSessionRepository)(nil).DeletePeserta), ctx, sessionID, pesertaID)
+}
+
+func (m *MockSessionRepository) AddPertemuan(ctx context.Context, pertemuan *sessiondomain.SessionPertemuan) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddPertemuan", ctx, pertemuan)
+	err, _ := ret[0].(error)
+	return err
+}
+
+func (mr *MockSessionRepositoryMockRecorder) AddPertemuan(ctx, pertemuan interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddPertemuan", reflect.TypeOf((*MockSessionRepository)(nil).AddPertemuan), ctx, pertemuan)
+}
+
+func (m *MockSessionRepository) UpdatePertemuan(ctx context.Context, pertemuan *sessiondomain.SessionPertemuan) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdatePertemuan", ctx, pertemuan)
+	err, _ := ret[0].(error)
+	return err
+}
+
+func (mr *MockSessionRepositoryMockRecorder) UpdatePertemuan(ctx, pertemuan interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePertemuan", reflect.TypeOf((*MockSessionRepository)(nil).UpdatePertemuan), ctx, pertemuan)
+}
+
+func (m *MockSessionRepository) FindPertemuanByID(ctx context.Context, sessionID uuid.UUID, pertemuanID uuid.UUID) (*sessiondomain.SessionPertemuan, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindPertemuanByID", ctx, sessionID, pertemuanID)
+	ret0, _ := ret[0].(*sessiondomain.SessionPertemuan)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+func (mr *MockSessionRepositoryMockRecorder) FindPertemuanByID(ctx, sessionID, pertemuanID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindPertemuanByID", reflect.TypeOf((*MockSessionRepository)(nil).FindPertemuanByID), ctx, sessionID, pertemuanID)
+}
+
+func (m *MockSessionRepository) ListPertemuan(ctx context.Context, sessionID uuid.UUID) ([]sessiondomain.SessionPertemuan, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListPertemuan", ctx, sessionID)
+	ret0, _ := ret[0].([]sessiondomain.SessionPertemuan)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+func (mr *MockSessionRepositoryMockRecorder) ListPertemuan(ctx, sessionID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListPertemuan", reflect.TypeOf((*MockSessionRepository)(nil).ListPertemuan), ctx, sessionID)
+}
+
+func (m *MockSessionRepository) SaveCatatanPertemuan(ctx context.Context, catatan *sessiondomain.SessionPertemuanPesertaCatatan) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SaveCatatanPertemuan", ctx, catatan)
+	err, _ := ret[0].(error)
+	return err
+}
+
+func (mr *MockSessionRepositoryMockRecorder) SaveCatatanPertemuan(ctx, catatan interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveCatatanPertemuan", reflect.TypeOf((*MockSessionRepository)(nil).SaveCatatanPertemuan), ctx, catatan)
+}
+
+func (m *MockSessionRepository) ListCatatanByPertemuan(ctx context.Context, pertemuanID uuid.UUID) ([]sessiondomain.SessionPertemuanPesertaCatatan, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListCatatanByPertemuan", ctx, pertemuanID)
+	ret0, _ := ret[0].([]sessiondomain.SessionPertemuanPesertaCatatan)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+func (mr *MockSessionRepositoryMockRecorder) ListCatatanByPertemuan(ctx, pertemuanID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListCatatanByPertemuan", reflect.TypeOf((*MockSessionRepository)(nil).ListCatatanByPertemuan), ctx, pertemuanID)
+}
+
+func (m *MockSessionRepository) ListCatatanBySession(ctx context.Context, sessionID uuid.UUID) ([]sessiondomain.SessionPertemuanPesertaCatatan, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListCatatanBySession", ctx, sessionID)
+	ret0, _ := ret[0].([]sessiondomain.SessionPertemuanPesertaCatatan)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+func (mr *MockSessionRepositoryMockRecorder) ListCatatanBySession(ctx, sessionID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListCatatanBySession", reflect.TypeOf((*MockSessionRepository)(nil).ListCatatanBySession), ctx, sessionID)
 }
 
 // MockAuthUsecase is a mock of AuthUsecase interface.
@@ -541,6 +743,19 @@ func (mr *MockUserUsecaseMockRecorder) ListPractitioners(ctx, role interface{}) 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListPractitioners", reflect.TypeOf((*MockUserUsecase)(nil).ListPractitioners), ctx, role)
 }
 
+func (m *MockUserUsecase) SyncSIK(ctx context.Context, userID uuid.UUID) (*userdomain.UserResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SyncSIK", ctx, userID)
+	ret0, _ := ret[0].(*userdomain.UserResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+func (mr *MockUserUsecaseMockRecorder) SyncSIK(ctx, userID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SyncSIK", reflect.TypeOf((*MockUserUsecase)(nil).SyncSIK), ctx, userID)
+}
+
 // MockSessionUsecase is a mock of SessionUsecase interface.
 type MockSessionUsecase struct {
 	ctrl     *gomock.Controller
@@ -623,6 +838,84 @@ func (m *MockSessionUsecase) AddMeeting(ctx context.Context, sessionID uuid.UUID
 func (mr *MockSessionUsecaseMockRecorder) AddMeeting(ctx, sessionID, currentUserID, role, input interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddMeeting", reflect.TypeOf((*MockSessionUsecase)(nil).AddMeeting), ctx, sessionID, currentUserID, role, input)
+}
+
+func (m *MockSessionUsecase) UpdateMeeting(ctx context.Context, sessionID uuid.UUID, meetingID uuid.UUID, currentUserID uuid.UUID, role userdomain.Role, input sessiondomain.UpdateMeetingInput) (*sessiondomain.Meeting, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateMeeting", ctx, sessionID, meetingID, currentUserID, role, input)
+	ret0, _ := ret[0].(*sessiondomain.Meeting)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+func (mr *MockSessionUsecaseMockRecorder) UpdateMeeting(ctx, sessionID, meetingID, currentUserID, role, input interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateMeeting", reflect.TypeOf((*MockSessionUsecase)(nil).UpdateMeeting), ctx, sessionID, meetingID, currentUserID, role, input)
+}
+
+func (m *MockSessionUsecase) ListPeserta(ctx context.Context, sessionID uuid.UUID) ([]sessiondomain.SessionPeserta, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListPeserta", ctx, sessionID)
+	ret0, _ := ret[0].([]sessiondomain.SessionPeserta)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+func (mr *MockSessionUsecaseMockRecorder) ListPeserta(ctx, sessionID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListPeserta", reflect.TypeOf((*MockSessionUsecase)(nil).ListPeserta), ctx, sessionID)
+}
+
+func (m *MockSessionUsecase) AddPeserta(ctx context.Context, sessionID uuid.UUID, input sessiondomain.PesertaInput) (*sessiondomain.SessionPeserta, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddPeserta", ctx, sessionID, input)
+	ret0, _ := ret[0].(*sessiondomain.SessionPeserta)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+func (mr *MockSessionUsecaseMockRecorder) AddPeserta(ctx, sessionID, input interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddPeserta", reflect.TypeOf((*MockSessionUsecase)(nil).AddPeserta), ctx, sessionID, input)
+}
+
+func (m *MockSessionUsecase) ListPertemuan(ctx context.Context, sessionID uuid.UUID) ([]sessiondomain.SessionPertemuan, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListPertemuan", ctx, sessionID)
+	ret0, _ := ret[0].([]sessiondomain.SessionPertemuan)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+func (mr *MockSessionUsecaseMockRecorder) ListPertemuan(ctx, sessionID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListPertemuan", reflect.TypeOf((*MockSessionUsecase)(nil).ListPertemuan), ctx, sessionID)
+}
+
+func (m *MockSessionUsecase) SaveCatatanPertemuan(ctx context.Context, sessionID uuid.UUID, input sessiondomain.CatatPertemuanPesertaInput) (*sessiondomain.SessionPertemuanPesertaCatatan, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SaveCatatanPertemuan", ctx, sessionID, input)
+	ret0, _ := ret[0].(*sessiondomain.SessionPertemuanPesertaCatatan)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+func (mr *MockSessionUsecaseMockRecorder) SaveCatatanPertemuan(ctx, sessionID, input interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveCatatanPertemuan", reflect.TypeOf((*MockSessionUsecase)(nil).SaveCatatanPertemuan), ctx, sessionID, input)
+}
+
+func (m *MockSessionUsecase) ListCatatanPertemuan(ctx context.Context, pertemuanID uuid.UUID) ([]sessiondomain.SessionPertemuanPesertaCatatan, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListCatatanPertemuan", ctx, pertemuanID)
+	ret0, _ := ret[0].([]sessiondomain.SessionPertemuanPesertaCatatan)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+func (mr *MockSessionUsecaseMockRecorder) ListCatatanPertemuan(ctx, pertemuanID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListCatatanPertemuan", reflect.TypeOf((*MockSessionUsecase)(nil).ListCatatanPertemuan), ctx, pertemuanID)
 }
 
 func (m *MockSessionUsecase) DeleteMeeting(ctx context.Context, sessionID uuid.UUID, meetingID uuid.UUID, currentUserID uuid.UUID, role userdomain.Role) error {

@@ -2,16 +2,20 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { USER_RECIPIENT } from "@/lib/certificateData";
 
 interface SertifikatHeroProps {
   onOpenVerifier: () => void;
   onOpenExport: () => void;
+  user?: {
+    full_name?: string;
+    nip?: string;
+  } | null;
 }
 
 export default function SertifikatHero({
   onOpenVerifier,
   onOpenExport,
+  user,
 }: SertifikatHeroProps) {
   return (
     <section
@@ -53,7 +57,7 @@ export default function SertifikatHero({
       </div>
 
       {/* Content Container */}
-      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      <div className="w-full mx-auto px-4 sm:px-8 lg:px-16 xl:px-24 relative z-10">
         {/* Breadcrumb Context */}
         <nav
           aria-label="Breadcrumb"
@@ -68,7 +72,9 @@ export default function SertifikatHero({
           <span className="text-white/40">/</span>
           <span className="text-white/60">Kredensial Digital</span>
           <span className="text-white/40">/</span>
-          <span className="text-white font-semibold">Sertifikat Kompetensi</span>
+          <span className="text-white font-semibold">
+            Sertifikat Kompetensi
+          </span>
         </nav>
 
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-5 pt-1 pb-1">
@@ -79,9 +85,10 @@ export default function SertifikatHero({
             </h1>
             <p className="text-[13.5px] font-normal leading-[22px] text-white/90">
               Portofolio sertifikat digital resmi untuk{" "}
-              <strong>{USER_RECIPIENT.name}</strong> (NIP: {USER_RECIPIENT.nip}).
-              Ditandatangani secara elektronik (BSrE BSSN) dan terintegrasi
-              langsung dengan database kompetensi SIASN BKN.
+              <strong>{user?.full_name || "Aparatur Sipil Negara"}</strong>
+              {user?.nip ? ` (NIP: ${user.nip})` : ""}. Ditandatangani secara
+              elektronik (BSrE BSSN) dan terintegrasi langsung dengan database
+              kompetensi SIASN BKN.
             </p>
           </div>
 

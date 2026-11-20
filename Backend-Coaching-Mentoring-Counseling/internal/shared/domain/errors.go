@@ -19,4 +19,7 @@ var (
 	ErrBadRequest           = errors.New("invalid request parameters")
 	ErrRateLimitExceeded    = errors.New("too many requests, please slow down")
 	ErrPractitionerNotFound = errors.New("practitioner not found or role is invalid")
+	ErrPegawaiNotFound      = errors.New("pegawai not found in SIK")
+	ErrMaxMonthlyMeetingsExceeded = errors.New("maksimal 2 pertemuan per bulan per jenis kegiatan (1 pertemuan = 2 JP)")
+	ErrSessionNotVerified   = errors.New("pertemuan hanya dapat ditambahkan setelah sesi diverifikasi dan disetujui oleh atasan / pejabat penilai")
 )

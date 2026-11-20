@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -110,9 +111,9 @@ func (r *UserRepository) ListByRole(ctx context.Context, role userdomain.Role) (
 	var users []userdomain.User
 	query := r.db.GormDB.WithContext(ctxTimeout).Where("is_active = true AND deleted_at IS NULL")
 	if role != "" {
-		query = query.Where("role = ?", role)
+		query = query.Where("role = ? OR role = ?", role, role.Normalize())
 	} else {
-		query = query.Where("role IN ('coach', 'mentor', 'counselor')")
+		query = query.Where("role = 'pegawai' OR role IN ('coach', 'mentor', 'counselor', 'client')")
 	}
 
 	result := query.Order("full_name asc").Find(&users)
@@ -120,4 +121,57 @@ func (r *UserRepository) ListByRole(ctx context.Context, role userdomain.Role) (
 		return nil, fmt.Errorf("failed to list users by role: %w", result.Error)
 	}
 	return users, nil
+}
+
+func (r *UserRepository) CountAdminsByUnitKerja(ctx context.Context, unitKerja string) (int64, error) {
+	ctxTimeout, cancel := r.db.WithTimeout(ctx)
+	defer cancel()
+
+	var count int64
+	cleanUnit := strings.TrimSpace(unitKerja)
+	query := r.db.GormDB.WithContext(ctxTimeout).
+		Model(&userdomain.User{}).
+		Where("is_active = true AND deleted_at IS NULL AND role IN ('admin', 'super_admin')")
+
+	if cleanUnit != "" {
+		query = query.Where("unit_kerja ILIKE ?", "%"+cleanUnit+"%")
+	}
+
+	if err := query.Count(&count).Error; err != nil {
+		return 0, fmt.Errorf("failed to count unit admins: %w", err)
+	}
+	return count, nil
+}
+
+func (r *UserRepository) FindRolesByNIPs(ctx context.Context, nips []string) (map[string]userdomain.Role, error) {
+	if len(nips) == 0 {
+		return map[string]userdomain.Role{}, nil
+	}
+
+	ctxTimeout, cancel := r.db.WithTimeout(ctx)
+	defer cancel()
+
+	type nipRole struct {
+		NIP  string          `gorm:"column:nip"`
+		Role userdomain.Role `gorm:"column:role"`
+	}
+
+	var results []nipRole
+	err := r.db.GormDB.WithContext(ctxTimeout).
+		Table("users").
+		Select("nip, role").
+		Where("nip IN (?) AND deleted_at IS NULL", nips).
+		Scan(&results).Error
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch roles by nips: %w", err)
+	}
+
+	roleMap := make(map[string]userdomain.Role, len(results))
+	for _, res := range results {
+		if res.NIP != "" {
+			roleMap[res.NIP] = res.Role
+		}
+	}
+	return roleMap, nil
 }

@@ -171,5 +171,17 @@ export const DEMO_ACCOUNTS: DemoAccount[] = [
     password: "RahasiaKemenhub2026!",
     roleName: "Rudi Setiawan (Coach)",
   },
+  {
+    label: "Admin",
+    nip: "197502021995031002",
+    password: "RahasiaKemenhub2026!",
+    roleName: "Admin BPSDM",
+  },
+  {
+    label: "Super Admin",
+    nip: "197001011990031001",
+    password: "RahasiaKemenhub2026!",
+    roleName: "Super Administrator",
+  },
 ];
 
