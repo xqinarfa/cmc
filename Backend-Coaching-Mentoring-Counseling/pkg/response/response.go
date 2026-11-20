@@ -66,6 +66,12 @@ func HandleDomainError(c *gin.Context, err error) {
 		Error(c, http.StatusBadRequest, "PRACTITIONER_NOT_FOUND", "Selected practitioner does not exist or has invalid role", nil)
 	case errors.Is(err, sharederrors.ErrPegawaiNotFound):
 		Error(c, http.StatusNotFound, "PEGAWAI_NOT_FOUND", "Pegawai tidak ditemukan di SIK", nil)
+	case errors.Is(err, sharederrors.ErrSessionAlreadyCompleted):
+		Error(c, http.StatusBadRequest, "SESSION_ALREADY_COMPLETED", err.Error(), nil)
+	case errors.Is(err, sharederrors.ErrSessionNotVerified):
+		Error(c, http.StatusBadRequest, "SESSION_NOT_VERIFIED", err.Error(), nil)
+	case errors.Is(err, sharederrors.ErrMaxMonthlyMeetingsExceeded):
+		Error(c, http.StatusBadRequest, "MAX_MONTHLY_MEETINGS_EXCEEDED", err.Error(), nil)
 	case errors.Is(err, sharederrors.ErrRateLimitExceeded):
 		Error(c, http.StatusTooManyRequests, "RATE_LIMIT_EXCEEDED", "Rate limit exceeded, please retry later", nil)
 	default:

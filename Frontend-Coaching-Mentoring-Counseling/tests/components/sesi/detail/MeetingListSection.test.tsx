@@ -97,5 +97,34 @@ describe("MeetingListSection Component", () => {
     fireEvent.click(lockedBtns[0]);
     expect(handleOpenAddMeeting).not.toHaveBeenCalled();
   });
+
+  it("disables add meeting action and shows completed status when session is marked completed", () => {
+    const handleOpenAddMeeting = vi.fn();
+
+    render(
+      <MeetingListSection
+        meetings={mockMeetings}
+        filledMeetings={2}
+        totalMeetings={2}
+        isVerified={true}
+        isCompleted={true}
+        sessionStatus="completed"
+        onViewDetail={vi.fn()}
+        onDeleteDraft={vi.fn()}
+        onOpenAddMeeting={handleOpenAddMeeting}
+        onOpenFinishModal={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText(/Sesi Telah Selesai Dilaksanakan/i)).toBeInTheDocument();
+    expect(screen.getByText(/^Sesi Telah Selesai$/i)).toBeInTheDocument();
+
+    const addBtn = screen.getByRole("button", {
+      name: /Tambah Pertemuan \(Sesi Selesai\)/i,
+    });
+    expect(addBtn).toBeDisabled();
+    fireEvent.click(addBtn);
+    expect(handleOpenAddMeeting).not.toHaveBeenCalled();
+  });
 });
 

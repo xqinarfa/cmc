@@ -224,6 +224,9 @@ export default function SesiDetailDynamicPage({ params }: PageProps) {
   const isSessionVerified =
     session?.status === "confirmed" || session?.status === "completed";
 
+  const isSessionCompleted =
+    session?.status === "completed" || session?.status === "selesai";
+
   const handleDeleteDraft = async (meetingId: number | string) => {
     if (!sessionId) return;
     try {
@@ -244,6 +247,13 @@ export default function SesiDetailDynamicPage({ params }: PageProps) {
   const handleCreateMeeting = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMeetingTitle.trim() || !sessionId) return;
+
+    if (isSessionCompleted) {
+      showToast(
+        "Sesi ini sudah ditandai selesai sehingga tidak dapat menambah pertemuan baru.",
+      );
+      return;
+    }
 
     if (!isSessionVerified) {
       showToast(
@@ -491,11 +501,18 @@ export default function SesiDetailDynamicPage({ params }: PageProps) {
                 filledMeetings={completedMeetings}
                 totalMeetings={totalMeetings}
                 isVerified={isSessionVerified}
+                isCompleted={isSessionCompleted}
                 sessionStatus={session?.status}
                 verifikatorName={session?.atasan_nama || "Atasan Langsung"}
                 onViewDetail={(m) => setSelectedMeetingDetail(m)}
                 onDeleteDraft={handleDeleteDraft}
                 onOpenAddMeeting={() => {
+                  if (isSessionCompleted) {
+                    showToast(
+                      "Sesi ini sudah ditandai selesai sehingga tidak dapat menambah pertemuan baru.",
+                    );
+                    return;
+                  }
                   if (!isSessionVerified) {
                     showToast(
                       "Pertemuan baru dapat ditambahkan setelah sesi diverifikasi dan disetujui oleh Atasan Langsung / Pejabat Penilai.",
@@ -548,6 +565,7 @@ export default function SesiDetailDynamicPage({ params }: PageProps) {
         meetingCount={meetings.length}
         existingDates={meetings.map((m) => m.dateStr)}
         isVerified={isSessionVerified}
+        isCompleted={isSessionCompleted}
         onClose={() => setShowAddMeetingModal(false)}
         onSubmit={handleCreateMeeting}
         title={newMeetingTitle}

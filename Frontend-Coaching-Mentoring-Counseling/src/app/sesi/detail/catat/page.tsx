@@ -68,6 +68,8 @@ function CatatPertemuanContent() {
 
   // Session state
   const [session, setSession] = useState<ApiSession | null>(null);
+  const isSessionCompleted =
+    session?.status === "completed" || session?.status === "selesai";
   const [loadingSession, setLoadingSession] = useState(true);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -406,6 +408,13 @@ function CatatPertemuanContent() {
       return;
     }
 
+    if (isSessionCompleted) {
+      showToast(
+        "Sesi ini sudah ditandai selesai sehingga tidak dapat menambah pertemuan baru.",
+      );
+      return;
+    }
+
     if (currentStep === 1) {
       if (!tanggal) {
         showToast("Silakan isi tanggal pertemuan terlebih dahulu.");
@@ -458,11 +467,16 @@ function CatatPertemuanContent() {
       return;
     }
 
-    if (
-      session &&
-      session.status !== "confirmed" &&
-      session.status !== "completed"
-    ) {
+    const isSessionCompleted =
+      session?.status === "completed" || session?.status === "selesai";
+    if (isSessionCompleted) {
+      showToast(
+        "Sesi ini sudah ditandai selesai sehingga tidak dapat menambah atau mengubah pertemuan baru.",
+      );
+      return;
+    }
+
+    if (session && session.status !== "confirmed") {
       showToast(
         "Pertemuan baru dapat dicatat setelah sesi diverifikasi dan disetujui oleh Atasan Langsung / Pejabat Penilai.",
       );
@@ -845,9 +859,35 @@ function CatatPertemuanContent() {
 
             {/* Rule Banner: 1 pertemuan = 2 JP. Maks. 2 pertemuan per bulan per jenis kegiatan */}
 
+            {session && isSessionCompleted && (
+              <div className="bg-emerald-50 border border-emerald-200 rounded-[8px] p-3.5 flex items-start gap-2.5 text-xs text-emerald-900">
+                <svg
+                  className="size-4.5 text-emerald-600 shrink-0 mt-0.5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+                <div className="flex flex-col gap-0.5">
+                  <span className="font-bold text-emerald-950">
+                    Sesi Telah Ditandai Selesai
+                  </span>
+                  <span>
+                    Sesi ini sudah ditandai selesai. Pertemuan baru tidak dapat ditambahkan atau dicatat kembali.
+                  </span>
+                </div>
+              </div>
+            )}
+
             {session &&
-              session.status !== "confirmed" &&
-              session.status !== "completed" && (
+              !isSessionCompleted &&
+              session.status !== "confirmed" && (
                 <div className="bg-amber-50 border border-amber-200 rounded-[8px] p-3.5 flex items-start gap-2.5 text-xs text-amber-900">
                   <svg
                     className="size-4.5 text-amber-600 shrink-0 mt-0.5"
@@ -1018,23 +1058,37 @@ function CatatPertemuanContent() {
 
                     <motion.button
                       type="button"
-                      whileHover={!isParticipant ? undefined : { scale: 1.02 }}
-                      whileTap={!isParticipant ? undefined : { scale: 0.97 }}
+                      whileHover={
+                        !isParticipant || isSessionCompleted
+                          ? undefined
+                          : { scale: 1.02 }
+                      }
+                      whileTap={
+                        !isParticipant || isSessionCompleted
+                          ? undefined
+                          : { scale: 0.97 }
+                      }
                       onClick={handleNextStep}
-                      disabled={isSubmitting || !isParticipant}
+                      disabled={
+                        isSubmitting || !isParticipant || isSessionCompleted
+                      }
                       title={
                         !isParticipant
                           ? "Hanya peserta terdaftar yang dapat menyimpan catatan"
-                          : undefined
+                          : isSessionCompleted
+                            ? "Sesi ini sudah selesai sehingga tidak dapat menambah catatan baru"
+                            : undefined
                       }
                       className="h-[36px] px-4 sm:px-[16px] rounded-[8px] bg-[#0a2540] hover:bg-[#13396b] text-white text-[13px] font-medium inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <span>
                         {isSubmitting
                           ? "Menyimpan..."
-                          : currentStep === 3
-                            ? "Simpan Pertemuan"
-                            : "Lanjut"}
+                          : isSessionCompleted
+                            ? "Sesi Selesai (Terkunci)"
+                            : currentStep === 3
+                              ? "Simpan Pertemuan"
+                              : "Lanjut"}
                       </span>
                       {currentStep < 3 && !isSubmitting && (
                         <svg

@@ -110,5 +110,37 @@ describe("AddMeetingModal Component", () => {
     });
     expect(submitBtn).toBeDisabled();
   });
+
+  it("shows completed notice and disables submit when isCompleted is true", () => {
+    render(
+      <AddMeetingModal
+        isOpen={true}
+        meetingCount={2}
+        onClose={vi.fn()}
+        onSubmit={vi.fn()}
+        title="Pertemuan Tambahan"
+        setTitle={vi.fn()}
+        date="2026-11-20"
+        setDate={vi.fn()}
+        type="Luring"
+        setType={vi.fn()}
+        location=""
+        setLocation={vi.fn()}
+        summary=""
+        setSummary={vi.fn()}
+        isVerified={true}
+        isCompleted={true}
+      />
+    );
+
+    expect(
+      screen.getByText(/Sesi ini sudah ditandai selesai. Penambahan pertemuan baru tidak diperbolehkan./i)
+    ).toBeInTheDocument();
+
+    const submitBtn = screen.getByRole("button", {
+      name: /Simpan Sebagai Draf/i,
+    });
+    expect(submitBtn).toBeDisabled();
+  });
 });
 

@@ -20,6 +20,7 @@ interface AddMeetingModalProps {
   setSummary: (v: string) => void;
   existingDates?: string[];
   isVerified?: boolean;
+  isCompleted?: boolean;
 }
 
 export function AddMeetingModal({
@@ -39,6 +40,7 @@ export function AddMeetingModal({
   setSummary,
   existingDates = [],
   isVerified = true,
+  isCompleted = false,
 }: AddMeetingModalProps) {
   // Check if selected date exceeds max 2 meetings per month
   const parseYearMonth = (dStr?: string): string => {
@@ -104,7 +106,18 @@ export function AddMeetingModal({
                 </div>
               </div>
 
-              {!isVerified && (
+              {isCompleted && (
+                <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-xs text-emerald-800 flex items-start gap-2">
+                  <svg className="size-4 shrink-0 text-emerald-600 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span>
+                    Sesi ini sudah ditandai selesai. Penambahan pertemuan baru tidak diperbolehkan.
+                  </span>
+                </div>
+              )}
+
+              {!isCompleted && !isVerified && (
                 <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800 flex items-start gap-2">
                   <svg className="size-4 shrink-0 text-amber-600 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -205,9 +218,15 @@ export function AddMeetingModal({
               </button>
               <button
                 type="submit"
-                disabled={isMonthLimitExceeded || !isVerified}
+                disabled={isMonthLimitExceeded || !isVerified || isCompleted}
                 className="h-9 px-4 rounded-lg bg-[#0a2540] text-white text-xs font-semibold hover:bg-[#13396b] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                title={!isVerified ? "Sesi harus diverifikasi terlebih dahulu oleh Atasan" : undefined}
+                title={
+                  isCompleted
+                    ? "Sesi ini telah selesai sehingga tidak dapat menambah pertemuan baru"
+                    : !isVerified
+                      ? "Sesi harus diverifikasi terlebih dahulu oleh Atasan"
+                      : undefined
+                }
               >
                 Simpan Sebagai Draf
               </button>

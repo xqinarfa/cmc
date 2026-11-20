@@ -22,4 +22,5 @@ var (
 	ErrPegawaiNotFound      = errors.New("pegawai not found in SIK")
 	ErrMaxMonthlyMeetingsExceeded = errors.New("maksimal 2 pertemuan per bulan per jenis kegiatan (1 pertemuan = 2 JP)")
 	ErrSessionNotVerified   = errors.New("pertemuan hanya dapat ditambahkan setelah sesi diverifikasi dan disetujui oleh atasan / pejabat penilai")
+	ErrSessionAlreadyCompleted = errors.New("sesi sudah ditandai selesai sehingga tidak dapat menambah pertemuan baru")
 )

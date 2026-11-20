@@ -14,6 +14,7 @@ interface MeetingListSectionProps {
   onOpenAddMeeting: () => void;
   onOpenFinishModal: () => void;
   isVerified?: boolean;
+  isCompleted?: boolean;
   sessionStatus?: string;
   verifikatorName?: string;
 }
@@ -28,10 +29,18 @@ export default function MeetingListSection({
   onOpenAddMeeting,
   onOpenFinishModal,
   isVerified = true,
+  isCompleted = false,
   sessionStatus,
   verifikatorName,
 }: MeetingListSectionProps) {
   const router = useRouter();
+
+  const isCompletedSession =
+    isCompleted ||
+    sessionStatus === "completed" ||
+    sessionStatus === "selesai";
+
+  const canAddMeeting = isVerified && !isCompletedSession;
 
   return (
     <motion.div
@@ -83,8 +92,35 @@ export default function MeetingListSection({
         </span>
       </div>
 
+      {/* Banner if Session is marked Completed */}
+      {isCompletedSession && (
+        <div className="px-5 py-3 bg-emerald-50/90 border-b border-emerald-200 flex items-start gap-3 text-[12.5px] text-emerald-900">
+          <svg
+            className="size-4.5 text-emerald-600 shrink-0 mt-0.5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth="2.5"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          <div className="flex flex-col gap-0.5">
+            <span className="font-bold text-emerald-950">
+              Sesi Telah Selesai Dilaksanakan
+            </span>
+            <p className="text-emerald-800 leading-relaxed text-[12px]">
+              Sesi ini telah ditandai selesai. Pertemuan baru tidak dapat ditambahkan lagi. Seluruh capaian JP dan catatan pelaksanaan tersimpan secara permanen.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Warning Banner if Session is NOT yet verified */}
-      {!isVerified && (
+      {!isCompletedSession && !isVerified && (
         <div className="px-5 py-3 bg-amber-50/90 border-b border-amber-200 flex items-start gap-3 text-[12.5px] text-amber-900">
           <svg
             className="size-4.5 text-amber-600 shrink-0 mt-0.5"
@@ -115,10 +151,28 @@ export default function MeetingListSection({
         <div className="p-8 text-center flex flex-col items-center justify-center">
           <div
             className={`size-12 rounded-full ${
-              isVerified ? "bg-slate-100 text-slate-400" : "bg-amber-100 text-amber-600"
+              isCompletedSession
+                ? "bg-emerald-100 text-emerald-600"
+                : isVerified
+                  ? "bg-slate-100 text-slate-400"
+                  : "bg-amber-100 text-amber-600"
             } flex items-center justify-center mb-3`}
           >
-            {isVerified ? (
+            {isCompletedSession ? (
+              <svg
+                className="size-6 text-emerald-600"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            ) : isVerified ? (
               <svg
                 className="size-6 text-slate-500"
                 fill="none"
@@ -149,27 +203,39 @@ export default function MeetingListSection({
             )}
           </div>
           <h4 className="text-[14px] font-semibold text-slate-800 mb-1">
-            {isVerified ? "Belum Ada Pertemuan" : "Menunggu Verifikasi Sesi"}
+            {isCompletedSession
+              ? "Sesi Selesai Dilaksanakan"
+              : isVerified
+                ? "Belum Ada Pertemuan"
+                : "Menunggu Verifikasi Sesi"}
           </h4>
           <p className="text-[12.5px] text-slate-500 max-w-md mb-4 leading-relaxed">
-            {isVerified
-              ? "Pertemuan tidak dibuat secara otomatis. Peserta atau coach/mentor dapat menambahkan pertemuan sesuai jadwal pelaksanaan yang disepakati."
-              : "Sesi ini belum diverifikasi oleh Atasan Langsung / Pejabat Penilai. Pertemuan baru dapat ditambahkan setelah sesi disetujui."}
+            {isCompletedSession
+              ? "Sesi ini telah ditandai selesai. Tidak ada pertemuan baru yang dapat ditambahkan."
+              : isVerified
+                ? "Pertemuan tidak dibuat secara otomatis. Peserta atau coach/mentor dapat menambahkan pertemuan sesuai jadwal pelaksanaan yang disepakati."
+                : "Sesi ini belum diverifikasi oleh Atasan Langsung / Pejabat Penilai. Pertemuan baru dapat ditambahkan setelah sesi disetujui."}
           </p>
           <motion.button
             type="button"
-            whileHover={isVerified ? { scale: 1.02 } : undefined}
-            whileTap={isVerified ? { scale: 0.98 } : undefined}
-            onClick={isVerified ? onOpenAddMeeting : undefined}
-            disabled={!isVerified}
+            whileHover={canAddMeeting ? { scale: 1.02 } : undefined}
+            whileTap={canAddMeeting ? { scale: 0.98 } : undefined}
+            onClick={canAddMeeting ? onOpenAddMeeting : undefined}
+            disabled={!canAddMeeting}
             className={`h-[36px] px-4 rounded-[8px] font-medium text-[13px] inline-flex items-center gap-2 transition-colors shadow-xs ${
-              isVerified
+              canAddMeeting
                 ? "bg-[#0a2540] hover:bg-[#13396b] text-white cursor-pointer"
                 : "bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-300/60"
             }`}
-            title={!isVerified ? "Pertemuan baru dapat ditambahkan setelah sesi diverifikasi oleh atasan" : undefined}
+            title={
+              isCompletedSession
+                ? "Sesi sudah ditandai selesai sehingga tidak dapat menambah pertemuan"
+                : !isVerified
+                  ? "Pertemuan baru dapat ditambahkan setelah sesi diverifikasi oleh atasan"
+                  : undefined
+            }
           >
-            {isVerified ? (
+            {canAddMeeting ? (
               <svg
                 className="size-3.5 text-white"
                 fill="none"
@@ -195,7 +261,11 @@ export default function MeetingListSection({
               </svg>
             )}
             <span>
-              {isVerified ? "Tambah Pertemuan Pertama" : "Tambah Pertemuan (Terkunci)"}
+              {isCompletedSession
+                ? "Tambah Pertemuan (Sesi Selesai)"
+                : isVerified
+                  ? "Tambah Pertemuan Pertama"
+                  : "Tambah Pertemuan (Terkunci)"}
             </span>
           </motion.button>
         </div>
@@ -479,7 +549,24 @@ export default function MeetingListSection({
       {/* Bottom Action Banner (Figma Node 835:188) */}
       <div className="bg-[#f7f9fb] border-t border-[#eef1f5] px-5 py-4 flex flex-col gap-3">
         <p className="text-[13px] text-[#334155]">
-          {isVerified ? (
+          {isCompletedSession ? (
+            <span className="text-emerald-800 font-medium inline-flex items-center gap-1.5">
+              <svg
+                className="size-4 text-emerald-600 shrink-0"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth="2.5"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+              <strong>Sesi telah selesai:</strong> Pertemuan baru tidak dapat ditambahkan lagi.
+            </span>
+          ) : isVerified ? (
             <>
               <strong className="font-semibold text-[#0f172a]">
                 Tambahkan pertemuan berikutnya
@@ -496,19 +583,25 @@ export default function MeetingListSection({
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
           <motion.button
             type="button"
-            whileHover={isVerified ? { scale: 1.02 } : undefined}
-            whileTap={isVerified ? { scale: 0.97 } : undefined}
-            onClick={isVerified ? onOpenAddMeeting : undefined}
-            disabled={!isVerified}
+            whileHover={canAddMeeting ? { scale: 1.02 } : undefined}
+            whileTap={canAddMeeting ? { scale: 0.97 } : undefined}
+            onClick={canAddMeeting ? onOpenAddMeeting : undefined}
+            disabled={!canAddMeeting}
             className={`h-[38px] sm:h-[36px] px-4 rounded-[8px] border font-medium text-[13px] inline-flex items-center justify-center gap-2 transition-colors shadow-2xs ${
-              isVerified
+              canAddMeeting
                 ? "bg-white border-[#e2e6eb] hover:bg-[#f8fafc] text-[#334155] cursor-pointer"
                 : "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed"
             }`}
-            title={!isVerified ? "Pertemuan baru dapat ditambahkan setelah sesi diverifikasi oleh atasan" : undefined}
+            title={
+              isCompletedSession
+                ? "Sesi ini sudah ditandai selesai sehingga tidak dapat menambah pertemuan"
+                : !isVerified
+                  ? "Pertemuan baru dapat ditambahkan setelah sesi diverifikasi oleh atasan"
+                  : undefined
+            }
           >
             <svg
-              className={`size-3.5 ${isVerified ? "text-[#334155]" : "text-slate-400"}`}
+              className={`size-3.5 ${canAddMeeting ? "text-[#334155]" : "text-slate-400"}`}
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -516,41 +609,80 @@ export default function MeetingListSection({
             >
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
             </svg>
-            <span>Tambah Pertemuan {!isVerified && "(Terkunci)"}</span>
+            <span>
+              Tambah Pertemuan{" "}
+              {isCompletedSession
+                ? "(Sesi Selesai)"
+                : !isVerified
+                  ? "(Terkunci)"
+                  : ""}
+            </span>
           </motion.button>
 
           <motion.button
             type="button"
-            whileHover={isVerified ? { scale: 1.02 } : undefined}
-            whileTap={isVerified ? { scale: 0.97 } : undefined}
+            whileHover={canAddMeeting ? { scale: 1.02 } : undefined}
+            whileTap={canAddMeeting ? { scale: 0.97 } : undefined}
             onClick={() => {
-              if (!isVerified) return;
+              if (!canAddMeeting) return;
               router.push(
                 sessionId
                   ? `/sesi/detail/catat?sessionId=${sessionId}&pertemuan=${meetings.length + 1}`
                   : "/sesi/detail/catat"
               );
             }}
-            disabled={!isVerified}
+            disabled={!canAddMeeting}
             className={`h-[38px] sm:h-[36px] px-3.5 rounded-[8px] font-medium text-[13px] inline-flex items-center justify-center gap-1.5 transition-colors shadow-xs ${
-              isVerified
+              canAddMeeting
                 ? "bg-[#0a2540] hover:bg-[#13396b] text-white cursor-pointer"
                 : "bg-slate-200 text-slate-400 cursor-not-allowed"
             }`}
-            title={!isVerified ? "Pertemuan baru dapat dicatat setelah sesi diverifikasi oleh atasan" : undefined}
+            title={
+              isCompletedSession
+                ? "Sesi ini telah selesai"
+                : !isVerified
+                  ? "Pertemuan baru dapat dicatat setelah sesi diverifikasi oleh atasan"
+                  : undefined
+            }
           >
-            <span>Catat Lengkap (Wizard) {!isVerified && "(Terkunci)"}</span>
+            <span>
+              Catat Lengkap (Wizard){" "}
+              {isCompletedSession
+                ? "(Sesi Selesai)"
+                : !isVerified
+                  ? "(Terkunci)"
+                  : ""}
+            </span>
           </motion.button>
 
-          <motion.button
-            type="button"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.97 }}
-            onClick={onOpenFinishModal}
-            className="h-[38px] sm:h-[36px] px-4 rounded-[8px] bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-medium text-[13px] inline-flex items-center justify-center transition-colors cursor-pointer shadow-2xs sm:ml-auto"
-          >
-            Tandai Sesi Selesai
-          </motion.button>
+          {isCompletedSession ? (
+            <div className="h-[38px] sm:h-[36px] px-4 rounded-[8px] bg-emerald-50 border border-emerald-200 text-emerald-800 font-semibold text-[13px] inline-flex items-center justify-center gap-1.5 shadow-2xs sm:ml-auto">
+              <svg
+                className="size-4 text-emerald-600"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth="2.5"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+              <span>Sesi Telah Selesai</span>
+            </div>
+          ) : (
+            <motion.button
+              type="button"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={onOpenFinishModal}
+              className="h-[38px] sm:h-[36px] px-4 rounded-[8px] bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-medium text-[13px] inline-flex items-center justify-center transition-colors cursor-pointer shadow-2xs sm:ml-auto"
+            >
+              Tandai Sesi Selesai
+            </motion.button>
+          )}
         </div>
       </div>
     </motion.div>

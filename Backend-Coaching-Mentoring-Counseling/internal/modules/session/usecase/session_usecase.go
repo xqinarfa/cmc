@@ -376,8 +376,13 @@ func (u *sessionUsecase) AddMeeting(ctx context.Context, sessionID uuid.UUID, cu
 		}
 	}
 
+	// Aturan: Jika sudah ditandai selesai maka tidak bisa tambah pertemuan
+	if session.Status == sessiondomain.StatusCompleted {
+		return nil, sharederrors.ErrSessionAlreadyCompleted
+	}
+
 	// Aturan Resmi: Pertemuan baru dapat ditambahkan setelah sesi diverifikasi dan disetujui oleh atasan / pejabat penilai
-	if session.Status != sessiondomain.StatusConfirmed && session.Status != sessiondomain.StatusCompleted {
+	if session.Status != sessiondomain.StatusConfirmed {
 		return nil, sharederrors.ErrSessionNotVerified
 	}
 
@@ -650,8 +655,13 @@ func (u *sessionUsecase) SaveCatatanPertemuan(ctx context.Context, sessionID uui
 		}
 	}
 
+	// Aturan: Jika sudah ditandai selesai maka tidak bisa tambah pertemuan atau ubah catatan
+	if session.Status == sessiondomain.StatusCompleted {
+		return nil, sharederrors.ErrSessionAlreadyCompleted
+	}
+
 	if targetPertemuan == nil {
-		if session.Status != sessiondomain.StatusConfirmed && session.Status != sessiondomain.StatusCompleted {
+		if session.Status != sessiondomain.StatusConfirmed {
 			return nil, sharederrors.ErrSessionNotVerified
 		}
 
