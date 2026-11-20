@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import Link from "next/link";
-import { AppNavbar, AppFooter } from "@/components/common";
+import { AppNavbar, AppFooter, AdminGuard } from "@/components/common";
 import {
   fetchSatuanKerjaList,
   fetchUnitKerjaList,
@@ -30,7 +30,7 @@ interface SelectedEntity {
   data: SatuanKerjaItem | UnitKerjaItem | SubUnitKerjaItem;
 }
 
-export default function MasterInstansiPage() {
+function MasterInstansiContent() {
   // Master data states
   const [satuanKerjaList, setSatuanKerjaList] = useState<SatuanKerjaItem[]>([]);
   const [unitKerjaList, setUnitKerjaList] = useState<UnitKerjaItem[]>([]);
@@ -2830,5 +2830,13 @@ export default function MasterInstansiPage() {
       {/* Footer */}
       <AppFooter />
     </div>
+  );
+}
+
+export default function MasterInstansiPage() {
+  return (
+    <AdminGuard>
+      <MasterInstansiContent />
+    </AdminGuard>
   );
 }

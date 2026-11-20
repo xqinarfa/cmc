@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
-import { AppNavbar, AppFooter } from "@/components/common";
+import { AppNavbar, AppFooter, AdminGuard } from "@/components/common";
 import {
   fetchSikSyncHistories,
   fetchSikSyncHistoryDetail,
@@ -11,7 +11,7 @@ import {
   SIKUnitSyncSummary,
 } from "@/lib/api";
 
-export default function SikSyncHistoryPage() {
+function SikSyncHistoryContent() {
   const [historyList, setHistoryList] = useState<SIKSyncHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -772,6 +772,14 @@ export default function SikSyncHistoryPage() {
 
       <AppFooter />
     </div>
+  );
+}
+
+export default function SikSyncHistoryPage() {
+  return (
+    <AdminGuard>
+      <SikSyncHistoryContent />
+    </AdminGuard>
   );
 }
 

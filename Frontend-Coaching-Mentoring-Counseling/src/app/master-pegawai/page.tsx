@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import Link from "next/link";
-import { AppNavbar, AppFooter } from "@/components/common";
+import { AppNavbar, AppFooter, AdminGuard } from "@/components/common";
 import {
   searchSikPegawai,
   fetchSikPegawai,
@@ -24,7 +24,7 @@ import {
   SubUnitKerjaItem,
 } from "@/lib/api";
 
-export default function MasterPegawaiPage() {
+function MasterPegawaiContent() {
   const [pegawaiList, setPegawaiList] = useState<SIKPegawai[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFetchingPegawai, setIsFetchingPegawai] = useState(false);
@@ -3386,5 +3386,13 @@ export default function MasterPegawaiPage() {
       {/* Footer */}
       <AppFooter />
     </div>
+  );
+}
+
+export default function MasterPegawaiPage() {
+  return (
+    <AdminGuard>
+      <MasterPegawaiContent />
+    </AdminGuard>
   );
 }

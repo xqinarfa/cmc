@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import { ASSETS } from "@/lib/assets";
 import { syncMyProfileWithSIK } from "@/lib/api/sik";
+import { isSuperAdminOrAdmin } from "@/lib/authGuard";
 
 export interface AppNavbarNotification {
   id: string;
@@ -339,6 +340,9 @@ export default function AppNavbar({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Check admin authorization for Master menu
+  const canAccessMaster = isSuperAdminOrAdmin(currentUser.role);
+
   // Handle menu item actions
   const handleNavClick = (id: string) => {
     setMobileMenuOpen(false);
@@ -347,7 +351,11 @@ export default function AppNavbar({
     } else if (id === "Sesi") {
       router.push("/sesi");
     } else if (id === "Master") {
-      router.push("/master");
+      if (canAccessMaster) {
+        router.push("/master");
+      } else {
+        router.push("/dashboard");
+      }
     } else if (id === "Program") {
       if (onOpenCoachFinder) {
         onOpenCoachFinder();
@@ -367,7 +375,7 @@ export default function AppNavbar({
     { id: "Beranda", label: "Beranda" },
     { id: "Sesi", label: "Sesi" },
     { id: "Sertifikat", label: "Sertifikat" },
-    { id: "Master", label: "Master" },
+    ...(canAccessMaster ? [{ id: "Master", label: "Master" }] : []),
     // { id: "Pengembangan", label: "Pengembangan" },
     // { id: "Pengaturan", label: "Pengaturan" },
   ];
@@ -697,19 +705,21 @@ export default function AppNavbar({
                         {currentUser.total_jp ?? 14} JP
                       </span>
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowProfileMenu(false);
-                        router.push("/master-pegawai");
-                      }}
-                      className="w-full text-left px-4 py-2 text-slate-700 hover:bg-slate-50 flex items-center justify-between cursor-pointer"
-                    >
-                      <span>Direktori Master Pegawai</span>
-                      <span className="text-[10px] font-semibold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200">
-                        SIK
-                      </span>
-                    </button>
+                    {canAccessMaster && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowProfileMenu(false);
+                          router.push("/master-pegawai");
+                        }}
+                        className="w-full text-left px-4 py-2 text-slate-700 hover:bg-slate-50 flex items-center justify-between cursor-pointer"
+                      >
+                        <span>Direktori Master Pegawai</span>
+                        <span className="text-[10px] font-semibold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200">
+                          SIK
+                        </span>
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={() => {

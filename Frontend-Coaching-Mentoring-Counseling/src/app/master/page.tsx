@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { AppNavbar, AppFooter } from "@/components/common";
+import { AppNavbar, AppFooter, AdminGuard } from "@/components/common";
 import {
   searchSikPegawai,
   fetchSatuanKerjaList,
@@ -10,7 +10,7 @@ import {
   fetchSubUnitKerjaList,
 } from "@/lib/api";
 
-export default function MasterDashboardPage() {
+function MasterDashboardContent() {
   const [stats, setStats] = useState({
     totalPegawai: 0,
     totalSatker: 0,
@@ -667,5 +667,13 @@ export default function MasterDashboardPage() {
 
       <AppFooter />
     </div>
+  );
+}
+
+export default function MasterDashboardPage() {
+  return (
+    <AdminGuard>
+      <MasterDashboardContent />
+    </AdminGuard>
   );
 }
