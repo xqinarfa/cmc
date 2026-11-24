@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -8,10 +8,60 @@ import { ASSETS } from "@/lib/assets";
 
 export default function Navbar() {
   const pathname = usePathname();
+  const [activeItem, setActiveItem] = useState<"home" | "about" | "cara-kerja" | "faq">("home");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const isHome = pathname === "/";
-  const isAbout = pathname === "/tentang";
+  useEffect(() => {
+    const handleScrollOrHash = () => {
+      const hash = window.location.hash;
+
+      if (pathname === "/") {
+        const caraKerjaEl = document.getElementById("cara-kerja");
+        if (caraKerjaEl) {
+          const rect = caraKerjaEl.getBoundingClientRect();
+          // Aktif jika section terlihat di viewport (misal di area tengah atas layar)
+          if (rect.top <= 250 && rect.bottom >= 150) {
+            setActiveItem("cara-kerja");
+            return;
+          }
+        }
+        if (hash === "#cara-kerja") {
+          setActiveItem("cara-kerja");
+          return;
+        }
+        setActiveItem("home");
+      } else if (pathname === "/tentang") {
+        const faqEl = document.getElementById("faq");
+        if (faqEl) {
+          const rect = faqEl.getBoundingClientRect();
+          if (rect.top <= 250 && rect.bottom >= 150) {
+            setActiveItem("faq");
+            return;
+          }
+        }
+        if (hash === "#faq") {
+          setActiveItem("faq");
+          return;
+        }
+        setActiveItem("about");
+      }
+    };
+
+    handleScrollOrHash();
+
+    window.addEventListener("scroll", handleScrollOrHash, { passive: true });
+    window.addEventListener("hashchange", handleScrollOrHash);
+
+    return () => {
+      window.removeEventListener("scroll", handleScrollOrHash);
+      window.removeEventListener("hashchange", handleScrollOrHash);
+    };
+  }, [pathname]);
+
+  const isHome = activeItem === "home";
+  const isAbout = activeItem === "about";
+  const isCaraKerja = activeItem === "cara-kerja";
+  const isFaq = activeItem === "faq";
 
   return (
     <header className="sticky top-0 z-50 backdrop-blur-md bg-white/95 border-b border-[#f1f5f9] shadow-xs">
@@ -90,6 +140,7 @@ export default function Navbar() {
           >
             <Link
               href="/"
+              onClick={() => setActiveItem("home")}
               className={`relative py-2 text-sm font-semibold transition-colors ${
                 isHome
                   ? "text-[#2563eb]"
@@ -107,6 +158,7 @@ export default function Navbar() {
             </Link>
             <Link
               href="/tentang"
+              onClick={() => setActiveItem("about")}
               className={`relative py-2 text-sm font-semibold transition-colors ${
                 isAbout
                   ? "text-[#2563eb]"
@@ -123,16 +175,40 @@ export default function Navbar() {
               )}
             </Link>
             <Link
-              href={isHome ? "#cara-kerja" : "/#cara-kerja"}
-              className="text-sm font-medium text-[#475569] hover:text-[#0f172a] transition-colors"
+              href={pathname === "/" ? "#cara-kerja" : "/#cara-kerja"}
+              onClick={() => setActiveItem("cara-kerja")}
+              className={`relative py-2 text-sm font-semibold transition-colors ${
+                isCaraKerja
+                  ? "text-[#2563eb]"
+                  : "text-[#475569] hover:text-[#0f172a]"
+              }`}
             >
               Cara Kerja
+              {isCaraKerja && (
+                <motion.span
+                  layoutId="navIndicator"
+                  className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#2563eb] rounded-full"
+                  transition={{ type: "spring", stiffness: 450, damping: 32 }}
+                />
+              )}
             </Link>
             <Link
-              href={isAbout ? "#faq" : "/tentang#faq"}
-              className="text-sm font-medium text-[#475569] hover:text-[#0f172a] transition-colors"
+              href={pathname === "/tentang" ? "#faq" : "/tentang#faq"}
+              onClick={() => setActiveItem("faq")}
+              className={`relative py-2 text-sm font-semibold transition-colors ${
+                isFaq
+                  ? "text-[#2563eb]"
+                  : "text-[#475569] hover:text-[#0f172a]"
+              }`}
             >
               FAQ
+              {isFaq && (
+                <motion.span
+                  layoutId="navIndicator"
+                  className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#2563eb] rounded-full"
+                  transition={{ type: "spring", stiffness: 450, damping: 32 }}
+                />
+              )}
             </Link>
           </nav>
 
@@ -167,7 +243,10 @@ export default function Navbar() {
           >
             <Link
               href="/"
-              onClick={() => setMobileMenuOpen(false)}
+              onClick={() => {
+                setActiveItem("home");
+                setMobileMenuOpen(false);
+              }}
               className={`px-3.5 py-2 rounded-xl text-sm font-semibold transition-colors ${
                 isHome
                   ? "bg-blue-50 text-blue-700"
@@ -178,7 +257,10 @@ export default function Navbar() {
             </Link>
             <Link
               href="/tentang"
-              onClick={() => setMobileMenuOpen(false)}
+              onClick={() => {
+                setActiveItem("about");
+                setMobileMenuOpen(false);
+              }}
               className={`px-3.5 py-2 rounded-xl text-sm font-semibold transition-colors ${
                 isAbout
                   ? "bg-blue-50 text-blue-700"
@@ -188,16 +270,30 @@ export default function Navbar() {
               Tentang CMC
             </Link>
             <Link
-              href={isHome ? "#cara-kerja" : "/#cara-kerja"}
-              onClick={() => setMobileMenuOpen(false)}
-              className="px-3.5 py-2 rounded-xl text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+              href={pathname === "/" ? "#cara-kerja" : "/#cara-kerja"}
+              onClick={() => {
+                setActiveItem("cara-kerja");
+                setMobileMenuOpen(false);
+              }}
+              className={`px-3.5 py-2 rounded-xl text-sm font-semibold transition-colors ${
+                isCaraKerja
+                  ? "bg-blue-50 text-blue-700"
+                  : "text-slate-700 hover:bg-slate-50"
+              }`}
             >
               Cara Kerja
             </Link>
             <Link
-              href={isAbout ? "#faq" : "/tentang#faq"}
-              onClick={() => setMobileMenuOpen(false)}
-              className="px-3.5 py-2 rounded-xl text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+              href={pathname === "/tentang" ? "#faq" : "/tentang#faq"}
+              onClick={() => {
+                setActiveItem("faq");
+                setMobileMenuOpen(false);
+              }}
+              className={`px-3.5 py-2 rounded-xl text-sm font-semibold transition-colors ${
+                isFaq
+                  ? "bg-blue-50 text-blue-700"
+                  : "text-slate-700 hover:bg-slate-50"
+              }`}
             >
               FAQ
             </Link>
