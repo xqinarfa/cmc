@@ -3,3 +3,4 @@ export { default as AppNavbar } from "./AppNavbar";
 export { default as Footer } from "./Footer";
 export { default as AppFooter } from "./AppFooter";
 export { default as AdminGuard } from "./AdminGuard";
+export { default as SearchableSelect } from "./SearchableSelect";

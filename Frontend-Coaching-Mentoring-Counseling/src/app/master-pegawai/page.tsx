@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import Link from "next/link";
-import { AppNavbar, AppFooter, AdminGuard } from "@/components/common";
+import { AppNavbar, AppFooter, AdminGuard, SearchableSelect } from "@/components/common";
 import {
   searchSikPegawai,
   fetchSikPegawai,
@@ -602,6 +602,40 @@ function MasterPegawaiContent() {
     );
   }, [subUnitKerjaList, pegawaiList, selectedSatker, selectedUnit]);
 
+  // Options formatted for SearchableSelect filter dropdowns
+  const satkerSelectOptions = useMemo(() => {
+    return availableSatkers.map((s) => ({
+      value: s.nama,
+      label: s.nama,
+      code: s.kode,
+    }));
+  }, [availableSatkers]);
+
+  const unitSelectOptions = useMemo(() => {
+    return availableUnits.map((u) => ({
+      value: u.nama,
+      label: u.nama,
+      code: u.kode,
+    }));
+  }, [availableUnits]);
+
+  const subUnitSelectOptions = useMemo(() => {
+    return availableSubUnits.map((sub) => ({
+      value: sub.nama,
+      label: sub.nama,
+      code: sub.kode,
+    }));
+  }, [availableSubUnits]);
+
+  const statusSelectOptions = useMemo(
+    () => [
+      { value: "PNS", label: "PNS (Tetap)" },
+      { value: "PPPK", label: "PPPK" },
+      { value: "NON_PNS", label: "Lainnya" },
+    ],
+    [],
+  );
+
   // Units filtered for sync modal search
   const filteredUnitsForSync = useMemo(() => {
     const q = syncSearchQuery.toLowerCase().trim();
@@ -1143,44 +1177,34 @@ function MasterPegawaiContent() {
             {/* Filters & View Toggles */}
             <div className="flex flex-wrap items-center gap-2.5">
               {/* Satuan Kerja (Kantor Induk) */}
-              <select
+              <SearchableSelect
                 value={selectedSatker}
-                onChange={(e) => {
-                  setSelectedSatker(e.target.value);
+                onChange={(val) => {
+                  setSelectedSatker(val);
                   setSelectedUnit("all");
                   setSelectedSubUnit("all");
                 }}
-                className="max-w-[210px] truncate px-3 py-2 text-xs font-medium bg-slate-50 border border-slate-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none text-slate-700 cursor-pointer"
-                title="Pilih Satuan Kerja / Kantor Induk (Diurutkan berdasarkan Kode)"
-              >
-                <option value="all">Semua Satuan Kerja</option>
-                {availableSatkers.map((satker) => (
-                  <option key={satker.id || satker.kode} value={satker.nama}>
-                    {satker.kode
-                      ? `[${satker.kode}] ${satker.nama}`
-                      : satker.nama}
-                  </option>
-                ))}
-              </select>
+                options={satkerSelectOptions}
+                allOptionLabel="Semua Satuan Kerja"
+                searchPlaceholder="Cari Satuan Kerja / Kode..."
+                triggerClassName="max-w-[210px] w-auto"
+                title="Pilih Satuan Kerja / Kantor Induk (Bisa dicari)"
+              />
 
               {/* Unit Kerja (Kantor / Balai) */}
               <div className="flex items-center gap-1.5">
-                <select
+                <SearchableSelect
                   value={selectedUnit}
-                  onChange={(e) => {
-                    setSelectedUnit(e.target.value);
+                  onChange={(val) => {
+                    setSelectedUnit(val);
                     setSelectedSubUnit("all");
                   }}
-                  className="max-w-[220px] truncate px-3 py-2 text-xs font-medium bg-slate-50 border border-slate-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none text-slate-700 cursor-pointer"
-                  title="Pilih Unit Kerja / Kantor / Balai (Diurutkan berdasarkan Kode)"
-                >
-                  <option value="all">Semua Unit Kerja</option>
-                  {availableUnits.map((unit) => (
-                    <option key={unit.id || unit.kode} value={unit.nama}>
-                      {unit.kode ? `[${unit.kode}] ${unit.nama}` : unit.nama}
-                    </option>
-                  ))}
-                </select>
+                  options={unitSelectOptions}
+                  allOptionLabel="Semua Unit Kerja"
+                  searchPlaceholder="Cari Unit Kerja / Balai / Kode..."
+                  triggerClassName="max-w-[220px] w-auto"
+                  title="Pilih Unit Kerja / Kantor / Balai (Bisa dicari)"
+                />
                 {selectedUnit !== "all" && (
                   <button
                     type="button"
@@ -1206,62 +1230,27 @@ function MasterPegawaiContent() {
               </div>
 
               {/* Sub Unit Kerja (di bawah Unit Kerja) */}
-              <select
+              <SearchableSelect
                 value={selectedSubUnit}
-                onChange={(e) => setSelectedSubUnit(e.target.value)}
-                className="max-w-[230px] truncate px-3 py-2 text-xs font-medium bg-slate-50 border border-slate-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none text-slate-700 cursor-pointer"
-                title="Pilih Sub Unit Kerja (Diurutkan berdasarkan Kode)"
-              >
-                <option value="all">Semua Sub Unit Kerja</option>
-                {availableSubUnits.map((sub) => (
-                  <option key={sub.id || sub.kode} value={sub.nama}>
-                    {sub.kode ? `[${sub.kode}] ${sub.nama}` : sub.nama}
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => setSelectedSubUnit(val)}
+                options={subUnitSelectOptions}
+                allOptionLabel="Semua Sub Unit Kerja"
+                searchPlaceholder="Cari Sub Unit Kerja / Kode..."
+                triggerClassName="max-w-[230px] w-auto"
+                title="Pilih Sub Unit Kerja (Bisa dicari)"
+              />
 
               {/* Status Kepegawaian */}
-              <select
+              <SearchableSelect
                 value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value)}
-                className="px-3 py-2 text-xs font-medium bg-slate-50 border border-slate-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none text-slate-700 cursor-pointer"
+                onChange={(val) => setSelectedStatus(val)}
+                options={statusSelectOptions}
+                allOptionLabel="Semua Status"
+                searchPlaceholder="Cari status..."
+                triggerClassName="max-w-[170px] w-auto"
+                dropdownClassName="w-48"
                 title="Pilih Status Kepegawaian"
-              >
-                <option value="all">Semua Status</option>
-                <option value="PNS">PNS (Tetap)</option>
-                <option value="PPPK">PPPK</option>
-                <option value="NON_PNS">Lainnya</option>
-              </select>
-
-              {/* Tools: Quick Copy Filtered NIPs */}
-              <button
-                type="button"
-                onClick={() => {
-                  const nips = filteredList.map((p) => p.nip).join(", ");
-                  navigator.clipboard.writeText(nips);
-                  showToast(
-                    "Daftar NIP Disalin",
-                    `${filteredList.length} NIP pegawai terfilter berhasil disalin untuk tools Anda.`,
-                  );
-                }}
-                className="px-3 py-2 text-xs font-semibold bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl transition-colors cursor-pointer flex items-center gap-1.5"
-                title="Salin semua NIP hasil filter untuk tools"
-              >
-                <svg
-                  className="size-3.5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"
-                  />
-                </svg>
-                <span>Salin NIP ({filteredList.length})</span>
-              </button>
+              />
 
               {/* View Switcher */}
               <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
@@ -2285,12 +2274,6 @@ function MasterPegawaiContent() {
                     />
                   </svg>
                   <span>Reset Password ke NIP</span>
-                </button>
-                <button
-                  onClick={() => handleCopyNip(selectedPegawai.nip)}
-                  className="px-3.5 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-semibold transition-colors cursor-pointer"
-                >
-                  Salin NIP
                 </button>
                 <button
                   onClick={() => setSelectedPegawai(null)}
