@@ -1,0 +1,2 @@
+-- Migration 000014: down
+-- No deletion of master pegawai to preserve data integrity
