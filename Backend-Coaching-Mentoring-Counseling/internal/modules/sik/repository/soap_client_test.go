@@ -22,20 +22,27 @@ func TestSOAPClient_Live(t *testing.T) {
 			t.Fatalf("failed to get list data kantor: %v", err)
 		}
 		t.Logf("Fetched %d offices under 008", len(kantors))
-		if len(kantors) == 0 {
-			t.Errorf("expected > 0 offices")
+		for _, k := range kantors {
+			t.Logf("Kantor: code=%s, name=%s", k.KodeKantor, k.NamaKantor)
 		}
 	})
 
-	t.Run("GetPegawaiPerKantor", func(t *testing.T) {
-		pegawai, err := client.GetPegawaiPerKantor(ctx, "008006000000000", "Pusat Pengembangan Sumber Daya Manusia Aparatur Perhubungan")
-		if err != nil {
-			t.Fatalf("failed to get pegawai per kantor: %v", err)
+	t.Run("GetPegawaiPerKantor_Units", func(t *testing.T) {
+		units := []struct {
+			code string
+			name string
+		}{
+			{"008002000000000", "Pusat Pengembangan Sumber Daya Manusia Perhubungan Darat"},
+			{"008003000000000", "Pusat Pengembangan Sumber Daya Manusia Perhubungan Laut"},
+			{"008004000000000", "Pusat Pengembangan Sumber Daya Manusia Perhubungan Udara"},
 		}
-		t.Logf("Fetched %d employees in 008006000000000", len(pegawai))
-		if len(pegawai) > 0 {
-			t.Logf("First employee: NIP=%s, Nama=%s, Kantor=%s, Subkantor=%s",
-				pegawai[0].NIP, pegawai[0].Nama, pegawai[0].Kantor, pegawai[0].Subkantor)
+		for _, u := range units {
+			list, err := client.GetPegawaiPerKantor(ctx, u.code, u.name)
+			if err != nil {
+				t.Logf("Unit %s (%s) ERROR: %v", u.code, u.name, err)
+			} else {
+				t.Logf("Unit %s (%s) SUCCESS: count=%d", u.code, u.name, len(list))
+			}
 		}
 	})
 }

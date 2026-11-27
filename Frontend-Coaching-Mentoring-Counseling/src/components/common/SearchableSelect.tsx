@@ -132,7 +132,7 @@ export default function SearchableSelect({
         type="button"
         disabled={disabled}
         onClick={() => setIsOpen((prev) => !prev)}
-        className={`flex items-center justify-between gap-1.5 px-3 py-2 text-xs font-medium bg-slate-50 hover:bg-slate-100/80 border rounded-xl outline-none transition-all cursor-pointer ${
+        className={`flex items-center justify-between gap-2 px-3 py-2 text-xs font-medium bg-slate-50 hover:bg-slate-100/80 border rounded-xl outline-none transition-all cursor-pointer ${
           isOpen
             ? "border-blue-500 ring-2 ring-blue-100 bg-white text-blue-900"
             : value !== "all"
@@ -142,9 +142,24 @@ export default function SearchableSelect({
           disabled ? "opacity-50 cursor-not-allowed" : ""
         } ${triggerClassName}`}
       >
-        <span className="truncate text-left flex-1" title={displayText}>
-          {displayText}
-        </span>
+        <div className="flex items-center gap-1.5 min-w-0 flex-1">
+          <svg
+            className="size-3.5 text-slate-400 shrink-0"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
+          </svg>
+          <span className="truncate text-left" title={displayText}>
+            {displayText}
+          </span>
+        </div>
 
         <div className="flex items-center gap-1 shrink-0 ml-1 text-slate-400">
           {value !== "all" && !disabled && (

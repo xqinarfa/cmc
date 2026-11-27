@@ -337,11 +337,11 @@ function MasterPegawaiContent() {
     }
   };
 
-  // Copy NIP helper
-  const handleCopyNip = (nip: string, e?: React.MouseEvent) => {
+  // Copy text helper
+  const handleCopyText = (text: string, label: string = "Teks", e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
-    navigator.clipboard.writeText(nip);
-    showToast("NIP Disalin", `NIP ${nip} telah disalin ke clipboard.`);
+    navigator.clipboard.writeText(text);
+    showToast(`${label} Disalin`, `${label} telah disalin ke clipboard.`);
   };
 
   // Reset Password handlers
@@ -1534,28 +1534,7 @@ function MasterPegawaiContent() {
 
                       {/* NIP */}
                       <td className="py-4 px-4 font-mono text-xs text-slate-600">
-                        <div className="flex items-center gap-1.5">
-                          <span>{p.nip}</span>
-                          <button
-                            onClick={(e) => handleCopyNip(p.nip, e)}
-                            className="text-slate-400 hover:text-blue-600 p-1 rounded hover:bg-slate-100 transition-colors cursor-pointer"
-                            title="Salin NIP"
-                          >
-                            <svg
-                              className="size-3.5"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2"
-                                d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"
-                              />
-                            </svg>
-                          </button>
-                        </div>
+                        <span>{p.nip}</span>
                       </td>
 
                       {/* Pangkat & Golongan */}
@@ -1717,27 +1696,8 @@ function MasterPegawaiContent() {
                           <h4 className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors text-sm line-clamp-1">
                             {formatFullName(p)}
                           </h4>
-                          <div className="flex items-center gap-1.5 text-xs text-slate-500 mt-0.5">
+                          <div className="text-xs text-slate-500 mt-0.5">
                             <span className="font-mono">{p.nip}</span>
-                            <button
-                              onClick={(e) => handleCopyNip(p.nip, e)}
-                              className="text-slate-400 hover:text-blue-600 p-0.5 rounded cursor-pointer"
-                              title="Salin NIP"
-                            >
-                              <svg
-                                className="size-3"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth="2"
-                                  d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"
-                                />
-                              </svg>
-                            </button>
                           </div>
                         </div>
                       </div>
@@ -1917,29 +1877,10 @@ function MasterPegawaiContent() {
                   <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
                     {formatFullName(selectedPegawai)}
                   </h3>
-                  <div className="flex items-center gap-2 text-slate-300 text-sm mt-1">
+                  <div className="text-slate-300 text-sm mt-1">
                     <span className="font-mono">
                       NIP: {selectedPegawai.nip}
                     </span>
-                    <button
-                      onClick={() => handleCopyNip(selectedPegawai.nip)}
-                      className="p-1 hover:text-white transition-colors cursor-pointer"
-                      title="Salin NIP"
-                    >
-                      <svg
-                        className="size-3.5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"
-                        />
-                      </svg>
-                    </button>
                   </div>
                 </div>
               </div>
@@ -2460,25 +2401,6 @@ function MasterPegawaiContent() {
                         <span className="font-mono font-bold text-blue-700">
                           {resetSuccessResult.nip}
                         </span>
-                        <button
-                          onClick={() => handleCopyNip(resetSuccessResult.nip)}
-                          className="p-1 hover:bg-slate-200 rounded text-slate-500 cursor-pointer"
-                          title="Salin NIP"
-                        >
-                          <svg
-                            className="size-3.5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth="2"
-                              d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"
-                            />
-                          </svg>
-                        </button>
                       </div>
                     </div>
                     <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-100">
@@ -2489,7 +2411,7 @@ function MasterPegawaiContent() {
                         </span>
                         <button
                           onClick={() =>
-                            handleCopyNip(resetSuccessResult.password_default)
+                            handleCopyText(resetSuccessResult.password_default, "Kata Sandi")
                           }
                           className="p-1 hover:bg-slate-200 rounded text-slate-500 cursor-pointer"
                           title="Salin Kata Sandi"
