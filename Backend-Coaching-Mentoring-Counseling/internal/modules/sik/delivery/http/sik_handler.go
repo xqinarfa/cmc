@@ -14,6 +14,7 @@ import (
 
 	sikdomain "github.com/kalanara/cmc-backend/internal/modules/sik/domain"
 	userdomain "github.com/kalanara/cmc-backend/internal/modules/user/domain"
+	"github.com/kalanara/cmc-backend/internal/platform/middleware"
 	"github.com/kalanara/cmc-backend/internal/platform/security"
 	sharederrors "github.com/kalanara/cmc-backend/internal/shared/domain"
 	"github.com/kalanara/cmc-backend/pkg/response"
@@ -515,6 +516,20 @@ func (h *SIKHandler) GetRoleByNIP(c *gin.Context) {
 // @Failure      404     {object}  response.StandardResponse
 // @Router       /api/v1/sik/pegawai/{nip}/role [post]
 func (h *SIKHandler) UpdateRoleByNIP(c *gin.Context) {
+	// Cek otorisasi: hanya super_admin yang berhak mengubah peran pegawai
+	if roleVal, exists := c.Get(middleware.ContextKeyRole); exists {
+		var userRole userdomain.Role
+		if r, ok := roleVal.(userdomain.Role); ok {
+			userRole = r
+		} else if s, ok := roleVal.(string); ok {
+			userRole = userdomain.Role(s)
+		}
+		if userRole.Normalize() != userdomain.RoleSuperAdmin {
+			response.Error(c, http.StatusForbidden, "FORBIDDEN", "Manajemen hak akses ini untuk Super Admin saja", nil)
+			return
+		}
+	}
+
 	nip := strings.TrimSpace(c.Param("nip"))
 	if nip == "" {
 		response.Error(c, http.StatusBadRequest, "INVALID_NIP", "NIP pegawai wajib diisi", nil)

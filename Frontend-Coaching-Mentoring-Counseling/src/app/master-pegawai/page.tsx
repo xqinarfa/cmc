@@ -2,8 +2,15 @@
 
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import Link from "next/link";
-import { AppNavbar, AppFooter, AdminGuard, SearchableSelect } from "@/components/common";
 import {
+  AppNavbar,
+  AppFooter,
+  AdminGuard,
+  SearchableSelect,
+} from "@/components/common";
+import { isSuperAdmin } from "@/lib/authGuard";
+import {
+  fetchCurrentUser,
   searchSikPegawai,
   fetchSikPegawai,
   syncMyProfileWithSIK,
@@ -85,6 +92,30 @@ function MasterPegawaiContent() {
   const [roleInfo, setRoleInfo] = useState<PegawaiRoleInfo | null>(null);
   const [targetRole, setTargetRole] = useState<string>("admin");
   const [isSavingRole, setIsSavingRole] = useState(false);
+
+  // User Authentication & Role Authorization (Super Admin vs Admin)
+  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const cached =
+      localStorage.getItem("user") || localStorage.getItem("cmc_user");
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached);
+        if (parsed?.role) {
+          setCurrentUserRole(parsed.role);
+        }
+      } catch {}
+    }
+    fetchCurrentUser()
+      .then((u) => {
+        if (u?.role) setCurrentUserRole(u.role);
+      })
+      .catch(() => {});
+  }, []);
+
+  const isUserSuperAdmin = isSuperAdmin(currentUserRole);
 
   // Sync state
   const [isSyncing, setIsSyncing] = useState(false);
@@ -338,7 +369,11 @@ function MasterPegawaiContent() {
   };
 
   // Copy text helper
-  const handleCopyText = (text: string, label: string = "Teks", e?: React.MouseEvent) => {
+  const handleCopyText = (
+    text: string,
+    label: string = "Teks",
+    e?: React.MouseEvent,
+  ) => {
     if (e) e.stopPropagation();
     navigator.clipboard.writeText(text);
     showToast(`${label} Disalin`, `${label} telah disalin ke clipboard.`);
@@ -347,6 +382,14 @@ function MasterPegawaiContent() {
   // Reset Password handlers
   const handleRequestResetPassword = (p: SIKPegawai, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
+    if (!isUserSuperAdmin) {
+      showToast(
+        "Akses Terbatas",
+        "Reset kata sandi pegawai hanya dapat dilakukan oleh Super Admin.",
+        "error"
+      );
+      return;
+    }
     setPegawaiToReset(p);
     setResetSuccessResult(null);
   };
@@ -388,6 +431,14 @@ function MasterPegawaiContent() {
     e?: React.MouseEvent,
   ) => {
     if (e) e.stopPropagation();
+    if (!isUserSuperAdmin) {
+      showToast(
+        "Akses Terbatas",
+        "Manajemen hak akses & peran pegawai hanya dapat diakses oleh Super Admin.",
+        "error"
+      );
+      return;
+    }
     setPegawaiToSetRole(p);
     setRoleInfo(null);
     setRoleInfoLoading(true);
@@ -1605,34 +1656,38 @@ function MasterPegawaiContent() {
                       {/* Actions */}
                       <td className="py-4 pr-6 pl-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
-                          <button
-                            type="button"
-                            onClick={(e) => handleOpenSetRoleModal(p, e)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-purple-50 hover:bg-purple-100 active:bg-purple-200 text-purple-800 text-xs font-semibold border border-purple-200/80 transition-colors cursor-pointer"
-                            title="Atur Peran Sistem Pegawai (Admin Unit, Coach, Mentor, Konselor, Pegawai)"
-                          >
-                            <span>👑</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={(e) => handleRequestResetPassword(p, e)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 active:bg-amber-200 text-amber-800 text-xs font-semibold border border-amber-200/80 transition-colors cursor-pointer"
-                            title="Reset Kata Sandi pegawai menjadi NIP untuk login"
-                          >
-                            <svg
-                              className="size-3.5 text-amber-700"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2"
-                                d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
-                              />
-                            </svg>
-                          </button>
+                          {isUserSuperAdmin && (
+                            <>
+                              <button
+                                type="button"
+                                onClick={(e) => handleOpenSetRoleModal(p, e)}
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-purple-50 hover:bg-purple-100 active:bg-purple-200 text-purple-800 text-xs font-semibold border border-purple-200/80 transition-colors cursor-pointer"
+                                title="Atur Peran Sistem Pegawai (Admin Unit, Coach, Mentor, Konselor, Pegawai)"
+                              >
+                                <span>👑</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => handleRequestResetPassword(p, e)}
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 active:bg-amber-200 text-amber-800 text-xs font-semibold border border-amber-200/80 transition-colors cursor-pointer"
+                                title="Reset Kata Sandi pegawai menjadi NIP untuk login"
+                              >
+                                <svg
+                                  className="size-3.5 text-amber-700"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth="2"
+                                    d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
+                                  />
+                                </svg>
+                              </button>
+                            </>
+                          )}
                           <button
                             type="button"
                             onClick={(e) => {
@@ -1765,38 +1820,44 @@ function MasterPegawaiContent() {
 
                   {/* Footer card action */}
                   <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-1.5 text-xs flex-wrap">
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        type="button"
-                        onClick={(e) => handleOpenSetRoleModal(p, e)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-purple-50 hover:bg-purple-100 active:bg-purple-200 text-purple-800 font-semibold border border-purple-200/80 transition-colors cursor-pointer"
-                        title="Atur Peran Sistem Pegawai"
-                      >
-                        <span>👑</span>
-                        <span>Role</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(e) => handleRequestResetPassword(p, e)}
-                        className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 active:bg-amber-200 text-amber-800 font-semibold border border-amber-200/80 transition-colors cursor-pointer"
-                        title="Reset Kata Sandi ke NIP"
-                      >
-                        <svg
-                          className="size-3.5 text-amber-700"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
+                    {isUserSuperAdmin ? (
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={(e) => handleOpenSetRoleModal(p, e)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-purple-50 hover:bg-purple-100 active:bg-purple-200 text-purple-800 font-semibold border border-purple-200/80 transition-colors cursor-pointer"
+                          title="Atur Peran Sistem Pegawai"
                         >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
-                          />
-                        </svg>
-                        <span>Reset PW</span>
-                      </button>
-                    </div>
+                          <span>👑</span>
+                          <span>Role</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => handleRequestResetPassword(p, e)}
+                          className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 active:bg-amber-200 text-amber-800 font-semibold border border-amber-200/80 transition-colors cursor-pointer"
+                          title="Reset Kata Sandi ke NIP"
+                        >
+                          <svg
+                            className="size-3.5 text-amber-700"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
+                            />
+                          </svg>
+                          <span>Reset PW</span>
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="text-slate-400 text-xs">
+                        Lihat informasi profil
+                      </span>
+                    )}
                     <span className="text-blue-600 font-semibold group-hover:text-blue-700 flex items-center gap-1">
                       <span>Detail</span>
                       <svg
@@ -2186,36 +2247,40 @@ function MasterPegawaiContent() {
                 Terverifikasi secara elektronik oleh BPSDM Kemenhub
               </div>
               <div className="flex items-center gap-2 flex-wrap justify-end">
-                <button
-                  type="button"
-                  onClick={() => handleOpenSetRoleModal(selectedPegawai)}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 active:bg-purple-800 text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
-                  title="Atur Peran Sistem Pegawai (Admin Unit, Coach, Mentor, Konselor, Pegawai)"
-                >
-                  <span>👑</span>
-                  <span>Atur Role Pegawai</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleRequestResetPassword(selectedPegawai)}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-slate-950 text-xs font-bold transition-all shadow-sm cursor-pointer"
-                  title="Reset kata sandi pegawai ini menjadi NIP"
-                >
-                  <svg
-                    className="size-3.5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
-                    />
-                  </svg>
-                  <span>Reset Password ke NIP</span>
-                </button>
+                {isUserSuperAdmin && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenSetRoleModal(selectedPegawai)}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 active:bg-purple-800 text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
+                      title="Atur Peran Sistem Pegawai (Admin Unit, Coach, Mentor, Konselor, Pegawai)"
+                    >
+                      <span>👑</span>
+                      <span>Atur Role Pegawai</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleRequestResetPassword(selectedPegawai)}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-slate-950 text-xs font-bold transition-all shadow-sm cursor-pointer"
+                      title="Reset kata sandi pegawai ini menjadi NIP"
+                    >
+                      <svg
+                        className="size-3.5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
+                        />
+                      </svg>
+                      <span>Reset Password ke NIP</span>
+                    </button>
+                  </>
+                )}
                 <button
                   onClick={() => setSelectedPegawai(null)}
                   className="px-4 py-2 rounded-xl bg-[#0a2540] hover:bg-[#1e3a5f] text-white text-xs font-semibold transition-colors cursor-pointer"
@@ -2229,7 +2294,7 @@ function MasterPegawaiContent() {
       )}
 
       {/* RESET PASSWORD CONFIRMATION & SUCCESS MODAL */}
-      {pegawaiToReset && (
+      {pegawaiToReset && isUserSuperAdmin && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200"
           onClick={() => {
@@ -2411,7 +2476,10 @@ function MasterPegawaiContent() {
                         </span>
                         <button
                           onClick={() =>
-                            handleCopyText(resetSuccessResult.password_default, "Kata Sandi")
+                            handleCopyText(
+                              resetSuccessResult.password_default,
+                              "Kata Sandi",
+                            )
                           }
                           className="p-1 hover:bg-slate-200 rounded text-slate-500 cursor-pointer"
                           title="Salin Kata Sandi"
@@ -2525,7 +2593,7 @@ function MasterPegawaiContent() {
       )}
 
       {/* SET ROLE MODAL (ATUR PERAN PEGAWAI & KUOTA ADMIN UNIT KERJA) */}
-      {pegawaiToSetRole && (
+      {pegawaiToSetRole && isUserSuperAdmin && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200"
           onClick={() => {
@@ -2695,7 +2763,8 @@ function MasterPegawaiContent() {
                         </span>
                       </div>
                       <p className="text-slate-500 text-xs mt-1 leading-relaxed">
-                        Akses administrator penuh ke seluruh modul, konfigurasi sistem, dan manajemen data lintas instansi se-Kemenhub.
+                        Akses administrator penuh ke seluruh modul, konfigurasi
+                        sistem, dan manajemen data lintas instansi se-Kemenhub.
                       </p>
                     </div>
                   </label>
@@ -2746,7 +2815,9 @@ function MasterPegawaiContent() {
                       type="radio"
                       name="systemRoleOption"
                       value="pegawai"
-                      checked={targetRole === "pegawai" || targetRole === "client"}
+                      checked={
+                        targetRole === "pegawai" || targetRole === "client"
+                      }
                       onChange={(e) => setTargetRole(e.target.value)}
                       className="mt-1 text-slate-800 focus:ring-slate-700"
                     />
@@ -2761,7 +2832,9 @@ function MasterPegawaiContent() {
                         </span>
                       </div>
                       <p className="text-slate-500 text-xs mt-1 leading-relaxed">
-                        Peran dasar seluruh ASN di lingkungan Kementerian Perhubungan untuk mengikuti maupun mendampingi sesi pembelajaran.
+                        Peran dasar seluruh ASN di lingkungan Kementerian
+                        Perhubungan untuk mengikuti maupun mendampingi sesi
+                        pembelajaran.
                       </p>
                     </div>
                   </label>
@@ -2799,7 +2872,6 @@ function MasterPegawaiContent() {
                     </>
                   ) : (
                     <>
-                      <span>👑</span>
                       <span>Simpan Peran Pegawai</span>
                     </>
                   )}

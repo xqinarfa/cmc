@@ -7,3 +7,9 @@ export function isSuperAdminOrAdmin(role?: string | null): boolean {
   const normalized = role.toLowerCase().replace(/[-_\s]/g, "");
   return normalized === "superadmin" || normalized === "admin";
 }
+
+export function isSuperAdmin(role?: string | null): boolean {
+  if (!role) return false;
+  const normalized = role.toLowerCase().replace(/[-_\s]/g, "");
+  return normalized === "superadmin";
+}

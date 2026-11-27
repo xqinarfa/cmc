@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { isSuperAdminOrAdmin } from "@/lib/authGuard";
+import { isSuperAdminOrAdmin, isSuperAdmin } from "@/lib/authGuard";
 
 describe("isSuperAdminOrAdmin RBAC Authorization Helper", () => {
   it("returns true for superadmin and variants", () => {
@@ -30,5 +30,30 @@ describe("isSuperAdminOrAdmin RBAC Authorization Helper", () => {
     expect(isSuperAdminOrAdmin("")).toBe(false);
     expect(isSuperAdminOrAdmin(null)).toBe(false);
     expect(isSuperAdminOrAdmin(undefined)).toBe(false);
+  });
+});
+
+describe("isSuperAdmin RBAC Authorization Helper", () => {
+  it("returns true only for superadmin and its variants", () => {
+    expect(isSuperAdmin("superadmin")).toBe(true);
+    expect(isSuperAdmin("SUPERADMIN")).toBe(true);
+    expect(isSuperAdmin("super_admin")).toBe(true);
+    expect(isSuperAdmin("super-admin")).toBe(true);
+    expect(isSuperAdmin("Super Admin")).toBe(true);
+  });
+
+  it("returns false for regular admin", () => {
+    expect(isSuperAdmin("admin")).toBe(false);
+    expect(isSuperAdmin("ADMIN")).toBe(false);
+    expect(isSuperAdmin("Admin")).toBe(false);
+  });
+
+  it("returns false for other roles or falsy inputs", () => {
+    expect(isSuperAdmin("pegawai")).toBe(false);
+    expect(isSuperAdmin("coach")).toBe(false);
+    expect(isSuperAdmin("client")).toBe(false);
+    expect(isSuperAdmin("")).toBe(false);
+    expect(isSuperAdmin(null)).toBe(false);
+    expect(isSuperAdmin(undefined)).toBe(false);
   });
 });
