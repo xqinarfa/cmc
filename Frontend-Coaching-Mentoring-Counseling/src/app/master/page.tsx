@@ -41,16 +41,16 @@ function MasterDashboardContent() {
             totalSatker:
               satkerRes.status === "fulfilled" && Array.isArray(satkerRes.value)
                 ? satkerRes.value.length
-                : 10,
+                : 0,
             totalUnit:
               unitRes.status === "fulfilled" && Array.isArray(unitRes.value)
                 ? unitRes.value.length
-                : 626,
+                : 0,
             totalSubUnit:
               subUnitRes.status === "fulfilled" &&
               Array.isArray(subUnitRes.value)
                 ? subUnitRes.value.length
-                : 48,
+                : 0,
           });
         }
       } catch (err) {
@@ -537,7 +537,7 @@ function MasterDashboardContent() {
                         />
                       </svg>
                       <span>
-                        10 Satuan Kerja & 626+ Unit Kerja se-Indonesia
+                        {stats.totalSatker > 0 ? `${stats.totalSatker} Satuan Kerja` : "Satuan Kerja"} & {stats.totalUnit > 0 ? `${stats.totalUnit}+ Unit Kerja` : "Unit Kerja"} se-Indonesia
                       </span>
                     </div>
                     <div className="flex items-center gap-2.5 text-xs text-slate-600">
@@ -583,11 +583,11 @@ function MasterDashboardContent() {
                 {/* Card Actions & Footer */}
                 <div className="mt-8 pt-6 border-t border-slate-100 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
                   <div className="text-xs text-slate-500 flex items-center gap-2">
-                    <span className="font-semibold text-slate-700">10</span>{" "}
+                    <span className="font-semibold text-slate-700">{stats.totalSatker}</span>{" "}
                     Satker •{" "}
-                    <span className="font-semibold text-slate-700">626</span>{" "}
+                    <span className="font-semibold text-slate-700">{stats.totalUnit}</span>{" "}
                     Unit •{" "}
-                    <span className="font-semibold text-slate-700">48</span> Sub
+                    <span className="font-semibold text-slate-700">{stats.totalSubUnit}</span> Sub
                     Unit
                   </div>
 
@@ -612,54 +612,6 @@ function MasterDashboardContent() {
                   </Link>
                 </div>
               </div>
-            </div>
-          </div>
-
-          {/* SIK Dephub Integration Info Box */}
-          <div className="mt-10 bg-gradient-to-r from-blue-50 via-indigo-50 to-slate-50 rounded-2xl border border-blue-200/70 p-6 sm:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-xl bg-white border border-blue-200 flex items-center justify-center text-blue-700 shadow-sm shrink-0">
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-              </div>
-              <div>
-                <h3 className="text-base font-bold text-slate-900">
-                  Sinkronisasi Terpadu SIK Dephub
-                </h3>
-                <p className="mt-1 text-xs sm:text-sm text-slate-600 max-w-3xl leading-relaxed">
-                  Semua master data pegawai dan struktur instansi disinkronkan
-                  secara berkala menggunakan protokol resmi SOAP Web Service SIK
-                  Kementerian Perhubungan. Hal ini memastikan data pelatih
-                  (Coach), mentor, konselor, dan peserta selalu akurat dan
-                  terkini.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3 shrink-0">
-              <Link
-                href="/master-pegawai"
-                className="px-4 py-2 text-xs font-semibold text-blue-700 bg-white hover:bg-blue-50 border border-blue-200 rounded-lg shadow-sm transition-colors"
-              >
-                Sinkronisasi Pegawai
-              </Link>
-              <Link
-                href="/master-instansi"
-                className="px-4 py-2 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded-lg shadow-sm transition-colors"
-              >
-                Sinkronisasi Instansi
-              </Link>
             </div>
           </div>
         </div>
